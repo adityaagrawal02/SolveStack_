@@ -89,25 +89,91 @@ Abstract methods in base class to enforce implementation in derived classes.
 ## 🏗 Project Structure (Sample)
 
 ```
-SolveStack/
-│
-├── models/
-│   ├── User.java
-│   ├── Company.java
-│   ├── Developer.java
-│   ├── Evaluator.java
-│   ├── Admin.java
-│   ├── Challenge.java
-│   ├── Submission.java
-│
-├── services/
-│   ├── ChallengeService.java
-│   ├── SubmissionService.java
-│   ├── EvaluationService.java
-│
-├── main/
-│   └── SolveStackApp.java
-│
+SolveStack/ 
+│ 
+├── models/ 
+│   │ 
+│   ├── User.java 
+│   │      ├── login() 
+│   │      ├── logout() 
+│   │      ├── viewDashboard() 
+│   │      └── updateProfile() 
+│   │ 
+│   ├── Company.java 
+│   │      ├── createChallenge() 
+│   │      ├── editChallenge() 
+│   │      ├── closeChallenge() 
+│   │      └── viewSubmissions() 
+│   │ 
+│   ├── Developer.java 
+│   │      ├── browseChallenges() 
+│   │      ├── submitSolution() 
+│   │      ├── trackSubmission() 
+│   │      └── withdrawSubmission() 
+│   │ 
+│   ├── Evaluator.java 
+│   │      ├── evaluateSubmission() 
+│   │      ├── giveFeedback() 
+│   │      └── assignScore() 
+│   │ 
+│   ├── Admin.java 
+│   │      ├── verifyUser() 
+│   │      ├── banUser() 
+│   │      ├── approveChallenge() 
+│   │      └── viewReports() 
+│   │ 
+│   ├── Challenge.java 
+│   │      ├── openChallenge() 
+│   │      ├── updateDeadline() 
+│   │      ├── addSubmission() 
+│   │      └── closeChallenge() 
+│   │ 
+│   └── Submission.java 
+│          
+├── uploadDocument() 
+│          
+│          
+│          
+│ 
+├── attachGithubLink() 
+├── updateStatus() 
+└── calculateScore() 
+├── services/ 
+│   │ 
+│   ├── ChallengeService.java 
+│   │      ├── createChallenge() 
+│   │      ├── deleteChallenge() 
+│   │      ├── getAllChallenges() 
+│   │      ├── searchChallenges() 
+│   │      └── assignEvaluator() 
+│   │ 
+│   ├── SubmissionService.java 
+│   │      ├── submitSolution() 
+│   │      ├── validateSubmission() 
+│   │      ├── fetchSubmissionsByChallenge() 
+│   │      └── updateSubmissionStatus() 
+│   │ 
+│   └── EvaluationService.java 
+│          
+├── evaluateSubmission() 
+│          
+│          
+│          
+├── calculateFinalScore() 
+├── generateLeaderboard() 
+└── publishResults() 
+── exceptions/ 
+│ ├── SolveStackException.java 
+│ ├── UserNotFoundException.java 
+│ ├── ChallengeNotFoundException.java 
+│ ├── SubmissionDeadlineException.java 
+│ ├── UnauthorizedAccessException.java 
+│ └── GlobalExceptionHandler.java 
+│ 
+├── main/ 
+│   │ 
+│   └── SolveStackApp.java 
+│ 
 └── README.md
 ```
 
