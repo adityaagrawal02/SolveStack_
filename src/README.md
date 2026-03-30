@@ -29,15 +29,15 @@ SolveStack addresses this gap by providing a modular, role-based innovation syst
 * 🏢 Companies – Post challenges
 * 👩‍💻 Developers / Researchers – Submit solutions
 * 🧑‍⚖️ Evaluators – Review and score submissions
-* 🛠 Admin – Manage platform operations
+* 🛠 models.Admin – Manage platform operations
 
 ---
 
 ## ✨ Key Features (Phase 1)
 
 * Role-based user system
-* Challenge posting and management
-* Submission tracking system
+* models.Challenge posting and management
+* models.Submission tracking system
 * Evaluation workflow
 * Status monitoring
 * Console-based prototype implementation
@@ -57,16 +57,16 @@ Private fields with controlled access using getters and setters.
 Base class:
 
 ```
-User
+models.User
 ```
 
 Derived classes:
 
 ```
-Company
-Developer
-Evaluator
-Admin
+models.Company
+models.Developer
+models.Evaluator
+models.Admin
 ```
 
 ### 🔹 Polymorphism
@@ -82,7 +82,7 @@ Abstract methods in base class to enforce implementation in derived classes.
 
 ### 🔹 Interface
 
-`Evaluable` interface implemented by Evaluator for submission scoring.
+`models.Evaluable` interface implemented by models.Evaluator for submission scoring.
 
 ---
 
@@ -93,42 +93,42 @@ SolveStack/
 │ 
 ├── models/ 
 │   │ 
-│   ├── User.java 
+│   ├── models.User.java 
 │   │      ├── login() 
 │   │      ├── logout() 
 │   │      ├── viewDashboard() 
 │   │      └── updateProfile() 
 │   │ 
-│   ├── Company.java 
+│   ├── models.Company.java 
 │   │      ├── createChallenge() 
 │   │      ├── editChallenge() 
 │   │      ├── closeChallenge() 
 │   │      └── viewSubmissions() 
 │   │ 
-│   ├── Developer.java 
+│   ├── models.Developer.java 
 │   │      ├── browseChallenges() 
 │   │      ├── submitSolution() 
 │   │      ├── trackSubmission() 
 │   │      └── withdrawSubmission() 
 │   │ 
-│   ├── Evaluator.java 
+│   ├── models.Evaluator.java 
 │   │      ├── evaluateSubmission() 
 │   │      ├── giveFeedback() 
 │   │      └── assignScore() 
 │   │ 
-│   ├── Admin.java 
+│   ├── models.Admin.java 
 │   │      ├── verifyUser() 
 │   │      ├── banUser() 
 │   │      ├── approveChallenge() 
 │   │      └── viewReports() 
 │   │ 
-│   ├── Challenge.java 
+│   ├── models.Challenge.java 
 │   │      ├── openChallenge() 
 │   │      ├── updateDeadline() 
 │   │      ├── addSubmission() 
 │   │      └── closeChallenge() 
 │   │ 
-│   └── Submission.java 
+│   └── models.Submission.java 
 │          
 ├── uploadDocument() 
 │          
@@ -163,12 +163,12 @@ SolveStack/
 ├── generateLeaderboard() 
 └── publishResults() 
 ── exceptions/ 
-│ ├── SolveStackException.java 
+│ ├── exceptions.SolveStackException.java 
 │ ├── UserNotFoundException.java 
-│ ├── ChallengeNotFoundException.java 
-│ ├── SubmissionDeadlineException.java 
-│ ├── UnauthorizedAccessException.java 
-│ └── GlobalExceptionHandler.java 
+│ ├── exceptions.ChallengeNotFoundException.java 
+│ ├── exceptions.exceptions.SubmissionDeadlineException.java 
+│ ├── exceptions.UnauthorizedAccessException.java 
+│ └── exceptions.GlobalExceptionHandler.java 
 │ 
 ├── main/ 
 │   │ 

@@ -3,7 +3,7 @@ package models;
 /**
  * ============================================================
  *  SolveStack – Open Innovation Collaboration Platform
- *  File   : User.java
+ *  File   : models.User.java
  *  Package: models
  *  Role   : Abstract base class for all user roles in the system.
  *
@@ -13,7 +13,7 @@ package models;
  *                     public getters and protected setters.
  *  ✔ Abstraction    – Abstract methods force every subclass
  *                     to define role-specific behaviour.
- *  ✔ Inheritance    – Company, Developer, Evaluator, Admin
+ *  ✔ Inheritance    – models.Company, models.Developer, models.Evaluator, models.Admin
  *                     all extend this class.
  *  ✔ Polymorphism   – viewDashboard() and getRole() are
  *                     overridden differently in each subclass.
@@ -32,15 +32,15 @@ public abstract class User {
     private String       profileBio;
     private String       contactNumber;
     private boolean      isLoggedIn;
-    private boolean      isVerified;   // Set by Admin after verification
-    private boolean      isBanned;     // Set by Admin for policy violations
+    private boolean      isVerified;   // Set by models.Admin after verification
+    private boolean      isBanned;     // Set by models.Admin for policy violations
 
     // ─────────────────────────────────────────────────────────
     //  CONSTRUCTOR
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Creates a new User with core identity fields.
+     * Creates a new models.User with core identity fields.
      *
      * @param userId   Unique identifier (e.g., UUID or DB primary key).
      * @param username Display name chosen by the user.
@@ -120,7 +120,7 @@ public abstract class User {
         }
         System.out.println("============================================");
         System.out.println("  SolveStack Dashboard – " + getRole());
-        System.out.println("  User  : " + username);
+        System.out.println("  models.User  : " + username);
         System.out.println("  Email : " + email);
         System.out.println("  Status: " + (isVerified ? "Verified ✔" : "Pending Verification"));
         System.out.println("============================================");
@@ -183,7 +183,7 @@ public abstract class User {
 
     /**
      * Returns the role label for this user type.
-     * Examples: "Company", "Developer", "Evaluator", "Admin"
+     * Examples: "models.Company", "models.Developer", "models.Evaluator", "models.Admin"
      *
      * @return Role string.
      */
@@ -238,15 +238,15 @@ public abstract class User {
     public boolean isBanned()        { return isBanned;      }
 
     // ─────────────────────────────────────────────────────────
-    //  PROTECTED SETTERS (only subclasses + Admin can mutate)
+    //  PROTECTED SETTERS (only subclasses + models.Admin can mutate)
     // ─────────────────────────────────────────────────────────
 
-    /** Called by Admin to verify a user after review. */
+    /** Called by models.Admin to verify a user after review. */
     protected void setVerified(boolean verified) {
         this.isVerified = verified;
     }
 
-    /** Called by Admin to ban / unban a user. */
+    /** Called by models.Admin to ban / unban a user. */
     protected void setBanned(boolean banned) {
         if (banned && this.isLoggedIn) {
             logout(); // Force logout on ban
@@ -272,7 +272,7 @@ public abstract class User {
     @Override
     public String toString() {
         return String.format(
-                "User{id='%s', username='%s', email='%s', role='%s', verified=%b, banned=%b, loggedIn=%b}",
+                "models.User{id='%s', username='%s', email='%s', role='%s', verified=%b, banned=%b, loggedIn=%b}",
                 userId, username, email, getRole(), isVerified, isBanned, isLoggedIn
         );
     }

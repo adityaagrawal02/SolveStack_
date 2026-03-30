@@ -3,15 +3,15 @@ package models;
 /**
  * ============================================================
  *  SolveStack – Open Innovation Collaboration Platform
- *  File   : Submission.java
+ *  File   : models.Submission.java
  *  Package: models
- *  Role   : Represents a developer's solution to a Challenge.
+ *  Role   : Represents a developer's solution to a models.Challenge.
  *
  *  OOP Principles Applied:
  *  ─────────────────────────────────────────────────────────
- *  ✔ Encapsulation  – All fields private; mutable only via
+ *   Encapsulation  – All fields private; mutable only via
  *                     controlled setters / methods.
- *  ✔ Abstraction    – Status enum cleanly models lifecycle.
+ *   Abstraction    – Status enum cleanly models lifecycle.
  * ============================================================
  */
 public class Submission {
@@ -33,7 +33,7 @@ public class Submission {
     private       String githubLink;
     private       String documentPath;       // Path to uploaded document
     private       Status status;
-    private       double score;              // Assigned by Evaluator (0–100)
+    private       double score;              // Assigned by models.Evaluator (0–100)
     private       String evaluatorFeedback;
 
     // ─────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ public class Submission {
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Creates a new Submission in SUBMITTED status.
+     * Creates a new models.Submission in SUBMITTED status.
      *
      * @param submissionId      Unique identifier.
      * @param challengeId       The challenge this solves.
@@ -133,7 +133,7 @@ public class Submission {
         }
         this.score             = score;
         this.evaluatorFeedback = (feedback != null) ? feedback : "";
-        System.out.printf("[SCORE] Submission %s scored: %.1f/100%n", submissionId, score);
+        System.out.printf("[SCORE] models.Submission %s scored: %.1f/100%n", submissionId, score);
     }
 
     /**
@@ -141,9 +141,9 @@ public class Submission {
      */
     public void printDetails() {
         System.out.println("============================================");
-        System.out.println("  Submission ID  : " + submissionId);
-        System.out.println("  Challenge ID   : " + challengeId);
-        System.out.println("  Developer      : " + developerUsername);
+        System.out.println("  models.Submission ID  : " + submissionId);
+        System.out.println("  models.Challenge ID   : " + challengeId);
+        System.out.println("  models.Developer      : " + developerUsername);
         System.out.println("  Status         : " + status);
         System.out.printf ("  Score          : %.1f / 100%n", score);
         System.out.println("  GitHub         : " + (githubLink.isBlank()   ? "N/A" : githubLink));
@@ -176,7 +176,7 @@ public class Submission {
     @Override
     public String toString() {
         return String.format(
-                "Submission{id='%s', challenge='%s', developer='%s', status=%s, score=%.1f}",
+                "models.Submission{id='%s', challenge='%s', developer='%s', status=%s, score=%.1f}",
                 submissionId, challengeId, developerUsername, status, score
         );
     }

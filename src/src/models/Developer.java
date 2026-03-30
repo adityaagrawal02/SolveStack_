@@ -7,19 +7,19 @@ import java.util.List;
 /**
  * ============================================================
  *  SolveStack – Open Innovation Collaboration Platform
- *  File   : Developer.java
+ *  File   : models.Developer.java
  *  Package: models
  *  Role   : Represents a developer or researcher who browses
  *           challenges and submits solutions.
  *
  *  OOP Principles Applied:
  *  ─────────────────────────────────────────────────────────
- *   Inheritance    – Extends User.
+ *   Inheritance    – Extends models.User.
  *   Encapsulation  – Submissions list is private; exposed
  *                     only as an unmodifiable view.
  *   Polymorphism   – Overrides getRole() and
  *                     displayRoleDashboard().
- *   Abstraction    – Implements all abstract User methods.
+ *   Abstraction    – Implements all abstract models.User methods.
  * ============================================================
  */
 public class Developer extends User {
@@ -38,12 +38,12 @@ public class Developer extends User {
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Creates a Developer user.
+     * Creates a models.Developer user.
      *
      * @param userId   Unique platform identifier.
      * @param username Display / login name.
      * @param email    Email address.
-     * @param password Plain-text password (hashed in User).
+     * @param password Plain-text password (hashed in models.User).
      * @param skillSet Comma-separated skills (e.g., "Java, ML, Cloud").
      */
     public Developer(String userId,
@@ -63,7 +63,7 @@ public class Developer extends User {
     // ─────────────────────────────────────────────────────────
 
     @Override
-    public String getRole() { return "Developer"; }
+    public String getRole() { return "models.Developer"; }
 
     @Override
     protected void displayRoleDashboard() {
@@ -90,7 +90,7 @@ public class Developer extends User {
 
     @Override
     public void onAccountRemoved() {
-        System.out.println("[ACCOUNT REMOVED] Developer '" + getUsername()
+        System.out.println("[ACCOUNT REMOVED] models.Developer '" + getUsername()
                 + "' removed. Withdrawing pending submissions...");
         for (Submission s : mySubmissions) {
             if (s.getStatus() == Submission.Status.SUBMITTED ||
@@ -138,7 +138,7 @@ public class Developer extends User {
      *
      * @param challenge       The target challenge.
      * @param solutionSummary Brief description of the solution.
-     * @return The created Submission, or null on failure.
+     * @return The created models.Submission, or null on failure.
      */
     public Submission submitSolution(Challenge challenge, String solutionSummary) {
         if (!isLoggedIn()) {
@@ -150,11 +150,11 @@ public class Developer extends User {
             return null;
         }
         if (challenge == null) {
-            System.out.println("[ERROR] Challenge cannot be null.");
+            System.out.println("[ERROR] models.Challenge cannot be null.");
             return null;
         }
         if (challenge.getStatus() != Challenge.Status.OPEN) {
-            System.out.println("[ERROR] Challenge is not open for submissions.");
+            System.out.println("[ERROR] models.Challenge is not open for submissions.");
             return null;
         }
         if (solutionSummary == null || solutionSummary.isBlank()) {
@@ -172,7 +172,7 @@ public class Developer extends User {
         boolean added = challenge.addSubmission(submission);
         if (added) {
             mySubmissions.add(submission);
-            System.out.println("[SUBMIT SUCCESS] Submission ID: " + submissionId);
+            System.out.println("[SUBMIT SUCCESS] models.Submission ID: " + submissionId);
         }
         return added ? submission : null;
     }
@@ -212,11 +212,11 @@ public class Developer extends User {
             return;
         }
         if (submission.getStatus() == Submission.Status.WITHDRAWN) {
-            System.out.println("[INFO] Submission already withdrawn.");
+            System.out.println("[INFO] models.Submission already withdrawn.");
             return;
         }
         submission.updateStatus(Submission.Status.WITHDRAWN);
-        System.out.println("[WITHDRAWN] Submission " + submissionId + " has been withdrawn.");
+        System.out.println("[WITHDRAWN] models.Submission " + submissionId + " has been withdrawn.");
     }
 
     /**
@@ -240,7 +240,7 @@ public class Developer extends User {
         for (Submission s : mySubmissions) {
             if (s.getSubmissionId().equals(submissionId)) return s;
         }
-        System.out.println("[ERROR] Submission not found: " + submissionId);
+        System.out.println("[ERROR] models.Submission not found: " + submissionId);
         return null;
     }
 
@@ -261,7 +261,7 @@ public class Developer extends User {
     @Override
     public String toString() {
         return String.format(
-                "Developer{id='%s', username='%s', skills='%s', points=%d, submissions=%d}",
+                "models.Developer{id='%s', username='%s', skills='%s', points=%d, submissions=%d}",
                 getUserId(), getUsername(), skillSet, totalPoints, mySubmissions.size()
         );
     }

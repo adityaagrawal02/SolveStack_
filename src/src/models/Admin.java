@@ -5,17 +5,17 @@ import java.util.List;
 /**
  * ============================================================
  *  SolveStack – Open Innovation Collaboration Platform
- *  File   : Admin.java
+ *  File   : models.Admin.java
  *  Package: models
  *  Role   : Platform administrator with elevated privileges.
  *
  *  OOP Principles Applied:
  *  ─────────────────────────────────────────────────────────
- *   Inheritance    – Extends User.
- *   Encapsulation  – Admin-only operations are gated behind
+ *   Inheritance    – Extends models.User.
+ *   Encapsulation  – models.Admin-only operations are gated behind
  *                     login checks and protected setters.
  *   Polymorphism   – Overrides getRole() and dashboard.
- *   Abstraction    – Implements all abstract User methods.
+ *   Abstraction    – Implements all abstract models.User methods.
  * ============================================================
  */
 public class Admin extends User {
@@ -32,11 +32,11 @@ public class Admin extends User {
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Creates an Admin user. Admin accounts are auto-verified.
+     * Creates an models.Admin user. models.Admin accounts are auto-verified.
      *
      * @param userId     Unique platform identifier.
-     * @param username   Admin login name.
-     * @param email      Admin email.
+     * @param username   models.Admin login name.
+     * @param email      models.Admin email.
      * @param password   Plain-text password.
      * @param adminLevel Privilege level (e.g., "SUPER", "REGIONAL").
      */
@@ -57,11 +57,11 @@ public class Admin extends User {
     // ─────────────────────────────────────────────────────────
 
     @Override
-    public String getRole() { return "Admin"; }
+    public String getRole() { return "models.Admin"; }
 
     @Override
     protected void displayRoleDashboard() {
-        System.out.println("  Admin Level       : " + adminLevel);
+        System.out.println("  models.Admin Level       : " + adminLevel);
         System.out.println("  Actions Performed : " + actionsPerformed);
         System.out.println("--------------------------------------------");
         System.out.println("  Quick Actions:");
@@ -75,7 +75,7 @@ public class Admin extends User {
 
     @Override
     public void onAccountRemoved() {
-        System.out.println("[ADMIN REMOVED] Admin account '" + getUsername()
+        System.out.println("[ADMIN REMOVED] models.Admin account '" + getUsername()
                 + "' has been removed from the system.");
     }
 
@@ -90,11 +90,11 @@ public class Admin extends User {
      */
     public void verifyUser(User user) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Admin must be logged in.");
+            System.out.println("[ERROR] models.Admin must be logged in.");
             return;
         }
         if (user == null) {
-            System.out.println("[ERROR] User cannot be null.");
+            System.out.println("[ERROR] models.User cannot be null.");
             return;
         }
         if (user.isVerified()) {
@@ -103,7 +103,7 @@ public class Admin extends User {
         }
         user.setVerified(true);
         actionsPerformed++;
-        System.out.println("[ADMIN] User '" + user.getUsername()
+        System.out.println("[ADMIN] models.User '" + user.getUsername()
                 + "' (" + user.getRole() + ") has been VERIFIED by " + getUsername());
     }
 
@@ -115,11 +115,11 @@ public class Admin extends User {
      */
     public void banUser(User user, String reason) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Admin must be logged in.");
+            System.out.println("[ERROR] models.Admin must be logged in.");
             return;
         }
         if (user == null) {
-            System.out.println("[ERROR] User cannot be null.");
+            System.out.println("[ERROR] models.User cannot be null.");
             return;
         }
         if (user instanceof Admin) {
@@ -132,7 +132,7 @@ public class Admin extends User {
         }
         user.setBanned(true);
         actionsPerformed++;
-        System.out.println("[ADMIN] User '" + user.getUsername() + "' BANNED by "
+        System.out.println("[ADMIN] models.User '" + user.getUsername() + "' BANNED by "
                 + getUsername() + ". Reason: " + (reason != null ? reason : "Not specified"));
     }
 
@@ -143,16 +143,16 @@ public class Admin extends User {
      */
     public void unbanUser(User user) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Admin must be logged in.");
+            System.out.println("[ERROR] models.Admin must be logged in.");
             return;
         }
         if (user == null || !user.isBanned()) {
-            System.out.println("[INFO] User is not banned or is null.");
+            System.out.println("[INFO] models.User is not banned or is null.");
             return;
         }
         user.setBanned(false);
         actionsPerformed++;
-        System.out.println("[ADMIN] User '" + user.getUsername() + "' has been UNBANNED by "
+        System.out.println("[ADMIN] models.User '" + user.getUsername() + "' has been UNBANNED by "
                 + getUsername());
     }
 
@@ -164,47 +164,47 @@ public class Admin extends User {
      */
     public void approveChallenge(Challenge challenge) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Admin must be logged in.");
+            System.out.println("[ERROR] models.Admin must be logged in.");
             return;
         }
         if (challenge == null) {
-            System.out.println("[ERROR] Challenge cannot be null.");
+            System.out.println("[ERROR] models.Challenge cannot be null.");
             return;
         }
         if (challenge.getStatus() != Challenge.Status.OPEN) {
-            System.out.println("[INFO] Challenge '" + challenge.getChallengeId()
+            System.out.println("[INFO] models.Challenge '" + challenge.getChallengeId()
                     + "' is not in OPEN state. Current: " + challenge.getStatus());
             return;
         }
         actionsPerformed++;
-        System.out.println("[ADMIN] Challenge '" + challenge.getTitle()
+        System.out.println("[ADMIN] models.Challenge '" + challenge.getTitle()
                 + "' APPROVED by " + getUsername() + ". Now publicly visible.");
     }
 
     /**
-     * Assigns an Evaluator to a specific Challenge.
+     * Assigns an models.Evaluator to a specific models.Challenge.
      *
      * @param challenge The challenge needing evaluation.
      * @param evaluator The evaluator to assign.
      */
     public void assignEvaluator(Challenge challenge, Evaluator evaluator) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Admin must be logged in.");
+            System.out.println("[ERROR] models.Admin must be logged in.");
             return;
         }
         if (challenge == null || evaluator == null) {
-            System.out.println("[ERROR] Challenge and Evaluator cannot be null.");
+            System.out.println("[ERROR] models.Challenge and models.Evaluator cannot be null.");
             return;
         }
         if (!evaluator.isVerified()) {
-            System.out.println("[ERROR] Evaluator must be verified before assignment.");
+            System.out.println("[ERROR] models.Evaluator must be verified before assignment.");
             return;
         }
         challenge.setAssignedEvaluatorId(evaluator.getUserId());
         evaluator.assignToChallenge(challenge.getChallengeId());
         challenge.markUnderReview();
         actionsPerformed++;
-        System.out.println("[ADMIN] Evaluator '" + evaluator.getUsername()
+        System.out.println("[ADMIN] models.Evaluator '" + evaluator.getUsername()
                 + "' assigned to challenge '" + challenge.getTitle() + "'");
     }
 
@@ -216,7 +216,7 @@ public class Admin extends User {
      */
     public void viewReports(List<User> allUsers, List<Challenge> allChallenges) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Admin must be logged in.");
+            System.out.println("[ERROR] models.Admin must be logged in.");
             return;
         }
 
@@ -244,7 +244,7 @@ public class Admin extends User {
         System.out.printf ("║    Closed        : %-22d║%n", closedCh);
         System.out.printf ("║  Total Submissions: %-21d║%n", totalSubs);
         System.out.println("╠══════════════════════════════════════════╣");
-        System.out.printf ("║  Admin Actions   : %-22d║%n", actionsPerformed);
+        System.out.printf ("║  models.Admin Actions   : %-22d║%n", actionsPerformed);
         System.out.println("╚══════════════════════════════════════════╝");
     }
 
@@ -258,7 +258,7 @@ public class Admin extends User {
     @Override
     public String toString() {
         return String.format(
-                "Admin{id='%s', username='%s', level='%s', actions=%d}",
+                "models.Admin{id='%s', username='%s', level='%s', actions=%d}",
                 getUserId(), getUsername(), adminLevel, actionsPerformed
         );
     }

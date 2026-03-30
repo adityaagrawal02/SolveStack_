@@ -1,5 +1,4 @@
 package models;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,20 +6,20 @@ import java.util.List;
 /**
  * ============================================================
  *  SolveStack – Open Innovation Collaboration Platform
- *  File   : Company.java
+ *  File   : models.Company.java
  *  Package: models
  *  Role   : Represents a corporate entity that posts challenges
  *           and reviews developer submissions.
  *
  *  OOP Principles Applied:
  *  ─────────────────────────────────────────────────────────
- *  ✔ Inheritance    – Extends User; inherits login, logout,
+ *   Inheritance    – Extends models.User; inherits login, logout,
  *                     updateProfile, and all getters.
- *  ✔ Encapsulation  – Company-specific fields are private;
+ *   Encapsulation  – models.Company-specific fields are private;
  *                     accessed through controlled methods.
- *  ✔ Polymorphism   – Overrides getRole() and
- *                     displayRoleDashboard() from User.
- *  ✔ Abstraction    – Implements all abstract methods from User.
+ *   Polymorphism   – Overrides getRole() and
+ *                     displayRoleDashboard() from models.User.
+ *   Abstraction    – Implements all abstract methods from models.User.
  * ============================================================
  */
 public class Company extends User {
@@ -32,7 +31,7 @@ public class Company extends User {
     private String       companyName;
     private String       industry;
     private String       website;
-    private String       registrationNumber;     // Verified by Admin
+    private String       registrationNumber;     // Verified by models.Admin
     private final List<Challenge> postedChallenges;   // Challenges this company created
 
     // ─────────────────────────────────────────────────────────
@@ -40,12 +39,12 @@ public class Company extends User {
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Creates a Company user with identity and corporate details.
+     * Creates a models.Company user with identity and corporate details.
      *
      * @param userId             Unique platform identifier.
      * @param username           Display / login name.
      * @param email              Corporate email address.
-     * @param password           Plain-text password (hashed in User).
+     * @param password           Plain-text password (hashed in models.User).
      * @param companyName        Official registered company name.
      * @param industry           Industry sector (e.g., "FinTech", "HealthTech").
      * @param registrationNumber Corporate registration / CIN number.
@@ -74,17 +73,17 @@ public class Company extends User {
     }
 
     // ─────────────────────────────────────────────────────────
-    //  ABSTRACT METHOD IMPLEMENTATIONS (required by User)
+    //  ABSTRACT METHOD IMPLEMENTATIONS (required by models.User)
     // ─────────────────────────────────────────────────────────
 
     /**
      * Returns the role label for this user type.
      *
-     * @return "Company"
+     * @return "models.Company"
      */
     @Override
     public String getRole() {
-        return "Company";
+        return "models.Company";
     }
 
     /**
@@ -98,7 +97,7 @@ public class Company extends User {
         long closed = postedChallenges.stream()
                 .filter(c -> c.getStatus() == Challenge.Status.CLOSED).count();
 
-        System.out.println("  Company         : " + companyName);
+        System.out.println("  models.Company         : " + companyName);
         System.out.println("  Industry        : " + industry);
         System.out.println("  Website         : " + (website.isBlank() ? "N/A" : website));
         System.out.println("--------------------------------------------");
@@ -119,7 +118,7 @@ public class Company extends User {
      */
     @Override
     public void onAccountRemoved() {
-        System.out.println("[ACCOUNT REMOVED] Company account '" + companyName
+        System.out.println("[ACCOUNT REMOVED] models.Company account '" + companyName
                 + "' is being removed. Closing all open challenges...");
         for (Challenge challenge : postedChallenges) {
             if (challenge.getStatus() == Challenge.Status.OPEN) {
@@ -143,7 +142,7 @@ public class Company extends User {
      * @param description     Full problem statement.
      * @param prizeAmount     Monetary reward for the winning submission.
      * @param durationDays    Number of days the challenge remains open.
-     * @return The newly created Challenge, or null if creation fails.
+     * @return The newly created models.Challenge, or null if creation fails.
      */
     public Challenge createChallenge(String title,
                                      String description,
@@ -154,15 +153,15 @@ public class Company extends User {
             return null;
         }
         if (!isVerified()) {
-            System.out.println("[ERROR] Your company account must be verified by an Admin before posting challenges.");
+            System.out.println("[ERROR] Your company account must be verified by an models.Admin before posting challenges.");
             return null;
         }
         if (title == null || title.isBlank()) {
-            System.out.println("[ERROR] Challenge title cannot be blank.");
+            System.out.println("[ERROR] models.Challenge title cannot be blank.");
             return null;
         }
         if (description == null || description.isBlank()) {
-            System.out.println("[ERROR] Challenge description cannot be blank.");
+            System.out.println("[ERROR] models.Challenge description cannot be blank.");
             return null;
         }
         if (prizeAmount <= 0) {
@@ -180,7 +179,7 @@ public class Company extends User {
         postedChallenges.add(challenge);
 
         System.out.println("[CHALLENGE CREATED] '" + title + "' posted by " + companyName);
-        System.out.println("  Challenge ID  : " + challengeId);
+        System.out.println("  models.Challenge ID  : " + challengeId);
         System.out.println("  Prize         : $" + prizeAmount);
         System.out.println("  Duration      : " + durationDays + " day(s)");
         System.out.println("  Status        : " + challenge.getStatus());
@@ -238,7 +237,7 @@ public class Company extends User {
         if (!changed) {
             System.out.println("[CHALLENGE EDIT] No changes were made to challenge: " + challengeId);
         } else {
-            System.out.println("[CHALLENGE EDIT] Challenge '" + challengeId + "' updated successfully.");
+            System.out.println("[CHALLENGE EDIT] models.Challenge '" + challengeId + "' updated successfully.");
         }
     }
 
@@ -257,7 +256,7 @@ public class Company extends User {
         if (challenge == null) return;
 
         if (challenge.getStatus() == Challenge.Status.CLOSED) {
-            System.out.println("[INFO] Challenge '" + challengeId + "' is already closed.");
+            System.out.println("[INFO] models.Challenge '" + challengeId + "' is already closed.");
             return;
         }
 
@@ -283,7 +282,7 @@ public class Company extends User {
         List<Submission> submissions = challenge.getSubmissions();
         System.out.println("============================================");
         System.out.println("  Submissions for: " + challenge.getTitle());
-        System.out.println("  Challenge ID   : " + challengeId);
+        System.out.println("  models.Challenge ID   : " + challengeId);
         System.out.println("  Total          : " + submissions.size());
         System.out.println("--------------------------------------------");
 
@@ -292,7 +291,7 @@ public class Company extends User {
         } else {
             for (int i = 0; i < submissions.size(); i++) {
                 Submission s = submissions.get(i);
-                System.out.printf("  %d. [%s] %s | Developer: %s | Score: %.1f%n",
+                System.out.printf("  %d. [%s] %s | models.Developer: %s | Score: %.1f%n",
                         i + 1,
                         s.getStatus(),
                         s.getSubmissionId(),
@@ -335,7 +334,7 @@ public class Company extends User {
      * Searches for a challenge by ID within this company's posted list.
      *
      * @param challengeId The ID to search for.
-     * @return The matching Challenge, or null if not found.
+     * @return The matching models.Challenge, or null if not found.
      */
     private Challenge findChallenge(String challengeId) {
         for (Challenge c : postedChallenges) {
@@ -343,7 +342,7 @@ public class Company extends User {
                 return c;
             }
         }
-        System.out.println("[ERROR] Challenge not found or not owned by " + companyName
+        System.out.println("[ERROR] models.Challenge not found or not owned by " + companyName
                 + ": " + challengeId);
         return null;
     }
@@ -384,7 +383,7 @@ public class Company extends User {
     @Override
     public String toString() {
         return String.format(
-                "Company{id='%s', username='%s', company='%s', industry='%s', challenges=%d, verified=%b}",
+                "models.Company{id='%s', username='%s', company='%s', industry='%s', challenges=%d, verified=%b}",
                 getUserId(), getUsername(), companyName, industry,
                 postedChallenges.size(), isVerified()
         );

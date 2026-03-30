@@ -6,16 +6,16 @@ import java.util.List;
 /**
  * ============================================================
  *  SolveStack – Open Innovation Collaboration Platform
- *  File   : Evaluator.java
+ *  File   : models.Evaluator.java
  *  Package: models
  *  Role   : Expert user who reviews and scores submissions.
  *
  *  OOP Principles Applied:
  *  ─────────────────────────────────────────────────────────
- *  ✔ Inheritance    – Extends User.
- *  ✔ Interface      – Implements Evaluable (evaluation contract).
- *  ✔ Polymorphism   – Overrides getRole() and dashboard.
- *  ✔ Abstraction    – Implements all abstract User methods.
+ *   Inheritance    – Extends models.User.
+ *   Interface      – Implements models.Evaluable (evaluation contract).
+ *   Polymorphism   – Overrides getRole() and dashboard.
+ *   Abstraction    – Implements all abstract models.User methods.
  * ============================================================
  */
 public class Evaluator extends User implements Evaluable {
@@ -33,7 +33,7 @@ public class Evaluator extends User implements Evaluable {
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Creates an Evaluator user.
+     * Creates an models.Evaluator user.
      *
      * @param userId    Unique platform identifier.
      * @param username  Display name.
@@ -57,7 +57,7 @@ public class Evaluator extends User implements Evaluable {
     // ─────────────────────────────────────────────────────────
 
     @Override
-    public String getRole() { return "Evaluator"; }
+    public String getRole() { return "models.Evaluator"; }
 
     @Override
     protected void displayRoleDashboard() {
@@ -74,7 +74,7 @@ public class Evaluator extends User implements Evaluable {
 
     @Override
     public void onAccountRemoved() {
-        System.out.println("[ACCOUNT REMOVED] Evaluator '" + getUsername()
+        System.out.println("[ACCOUNT REMOVED] models.Evaluator '" + getUsername()
                 + "' removed from platform. "
                 + assignedChallengeIds.size() + " challenge(s) need reassignment.");
         assignedChallengeIds.clear();
@@ -91,11 +91,11 @@ public class Evaluator extends User implements Evaluable {
     @Override
     public void evaluateSubmission(Submission submission, double score, String feedback) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Evaluator must be logged in.");
+            System.out.println("[ERROR] models.Evaluator must be logged in.");
             return;
         }
         if (submission == null) {
-            System.out.println("[ERROR] Submission cannot be null.");
+            System.out.println("[ERROR] models.Submission cannot be null.");
             return;
         }
         if (score < 0 || score > 100) {
@@ -122,11 +122,11 @@ public class Evaluator extends User implements Evaluable {
     @Override
     public void giveFeedback(Submission submission, String feedback) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Evaluator must be logged in.");
+            System.out.println("[ERROR] models.Evaluator must be logged in.");
             return;
         }
         if (submission == null || feedback == null || feedback.isBlank()) {
-            System.out.println("[ERROR] Submission and feedback cannot be null/blank.");
+            System.out.println("[ERROR] models.Submission and feedback cannot be null/blank.");
             return;
         }
         submission.calculateScore(submission.getScore(), feedback);
@@ -140,11 +140,11 @@ public class Evaluator extends User implements Evaluable {
     @Override
     public void assignScore(Submission submission, double score) {
         if (!isLoggedIn()) {
-            System.out.println("[ERROR] Evaluator must be logged in.");
+            System.out.println("[ERROR] models.Evaluator must be logged in.");
             return;
         }
         if (submission == null) {
-            System.out.println("[ERROR] Submission cannot be null.");
+            System.out.println("[ERROR] models.Submission cannot be null.");
             return;
         }
         submission.calculateScore(score, submission.getEvaluatorFeedback());
@@ -157,7 +157,7 @@ public class Evaluator extends User implements Evaluable {
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Assigns this evaluator to a challenge (called by Admin/ChallengeService).
+     * Assigns this evaluator to a challenge (called by models.Admin/ChallengeService).
      *
      * @param challengeId ID of the challenge to be assigned.
      */
@@ -184,7 +184,7 @@ public class Evaluator extends User implements Evaluable {
     @Override
     public String toString() {
         return String.format(
-                "Evaluator{id='%s', username='%s', expertise='%s', evaluationsDone=%d}",
+                "models.Evaluator{id='%s', username='%s', expertise='%s', evaluationsDone=%d}",
                 getUserId(), getUsername(), expertise, evaluationsCompleted
         );
     }

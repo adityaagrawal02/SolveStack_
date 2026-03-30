@@ -1,5 +1,4 @@
 package models;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,15 +7,15 @@ import java.util.List;
 /**
  * ============================================================
  *  SolveStack – Open Innovation Collaboration Platform
- *  File   : Challenge.java
+ *  File   : models.Challenge.java
  *  Package: models
- *  Role   : Represents a problem/challenge posted by a Company.
+ *  Role   : Represents a problem/challenge posted by a models.Company.
  *
  *  OOP Principles Applied:
  *  ─────────────────────────────────────────────────────────
- *  ✔ Encapsulation  – All fields private; state changes only
+ *   Encapsulation  – All fields private; state changes only
  *                     via controlled methods.
- *  ✔ Abstraction    – Status enum hides raw state strings.
+ *   Abstraction    – Status enum hides raw state strings.
  * ============================================================
  */
 public class Challenge {
@@ -34,25 +33,25 @@ public class Challenge {
     private final String      challengeId;
     private       String      title;
     private       String      description;
-    private final Company     postedBy;
+    private final Company postedBy;
     private       double      prizeAmount;
     private final LocalDate   postedDate;
     private       LocalDate   deadline;
     private       Status      status;
     private final List<Submission> submissions;
-    private       String      assignedEvaluatorId; // Set by Admin / ChallengeService
+    private       String      assignedEvaluatorId; // Set by models.Admin / ChallengeService
 
     // ─────────────────────────────────────────────────────────
     //  CONSTRUCTOR
     // ─────────────────────────────────────────────────────────
 
     /**
-     * Creates a new Challenge in OPEN status.
+     * Creates a new models.Challenge in OPEN status.
      *
      * @param challengeId  Unique identifier.
      * @param title        Short problem title.
      * @param description  Full problem statement.
-     * @param postedBy     The Company that created this challenge.
+     * @param postedBy     The models.Company that created this challenge.
      * @param prizeAmount  Monetary reward for the winning solution.
      * @param durationDays How many days the challenge remains open.
      */
@@ -141,9 +140,9 @@ public class Challenge {
     }
 
     /**
-     * Adds a validated Submission to this challenge.
+     * Adds a validated models.Submission to this challenge.
      *
-     * @param submission The Submission to attach.
+     * @param submission The models.Submission to attach.
      * @return true if added; false if the challenge is not OPEN.
      */
     public boolean addSubmission(Submission submission) {
@@ -152,13 +151,13 @@ public class Challenge {
             return false;
         }
         if (submission == null) {
-            System.out.println("[ERROR] Submission cannot be null.");
+            System.out.println("[ERROR] models.Submission cannot be null.");
             return false;
         }
         // Prevent duplicate submissions from the same developer
         for (Submission s : submissions) {
             if (s.getDeveloperUsername().equals(submission.getDeveloperUsername())) {
-                System.out.println("[ERROR] Developer " + submission.getDeveloperUsername()
+                System.out.println("[ERROR] models.Developer " + submission.getDeveloperUsername()
                         + " has already submitted to this challenge.");
                 return false;
             }
@@ -174,9 +173,9 @@ public class Challenge {
      */
     public void printDetails() {
         System.out.println("============================================");
-        System.out.println("  Challenge   : " + title);
+        System.out.println("  models.Challenge   : " + title);
         System.out.println("  ID          : " + challengeId);
-        System.out.println("  Company     : " + postedBy.getCompanyName());
+        System.out.println("  models.Company     : " + postedBy.getCompanyName());
         System.out.println("  Status      : " + status);
         System.out.println("  Prize       : $" + prizeAmount);
         System.out.println("  Posted      : " + postedDate);
@@ -194,7 +193,7 @@ public class Challenge {
     public String          getChallengeId()         { return challengeId;          }
     public String          getTitle()               { return title;                }
     public String          getDescription()         { return description;          }
-    public Company         getPostedBy()            { return postedBy;             }
+    public Company getPostedBy()            { return postedBy;             }
     public double          getPrizeAmount()         { return prizeAmount;          }
     public LocalDate       getPostedDate()          { return postedDate;           }
     public LocalDate       getDeadline()            { return deadline;             }
@@ -220,7 +219,7 @@ public class Challenge {
     @Override
     public String toString() {
         return String.format(
-                "Challenge{id='%s', title='%s', company='%s', status=%s, prize=%.2f, submissions=%d}",
+                "models.Challenge{id='%s', title='%s', company='%s', status=%s, prize=%.2f, submissions=%d}",
                 challengeId, title, postedBy.getCompanyName(), status, prizeAmount, submissions.size()
         );
     }
