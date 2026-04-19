@@ -1,0 +1,179 @@
+# 📄 ChallengeService.java — README
+
+**Package:** `services`
+**Type:** `public class`
+**Project:** SolveStack – Open Innovation Collaboration Platform
+
+---
+
+## 📌 What Is This File?
+
+`ChallengeService.java` is the **service layer** responsible for all platform-wide challenge operations. While `Company.java` owns and manages challenges that *belong to it*, `ChallengeService` maintains a **master registry** of every challenge across all companies on the platform.
+
+Think of it like this: `Company` is the owner of a challenge, but `ChallengeService` is the platform administrator that keeps track of everything globally — approvals, searches, evaluator assignments, and registry management.
+
+---
+
+## 🎯 Purpose & Responsibility
+
+| Responsibility | Method |
+|---|---|
+| Create and register a new challenge | `createChallenge(...)` |
+| Delete a challenge from the platform | `deleteChallenge(...)` |
+| Fetch all challenges (all statuses) | `getAllChallenges()` |
+| Fetch only open/available challenges | `getOpenChallenges()` |
+| Search by keyword in title or description | `searchChallenges(String keyword)` |
+| Filter challenges by status | `filterByStatus(String status)` |
+| Assign an evaluator to a challenge | `assignEvaluator(...)` |
+| Approve a pending challenge (Admin action) | `approveChallenge(String id)` |
+| Look up a challenge by its ID | `getChallengeById(String id)` |
+| Print a full platform challenge report | `printAllChallenges()` |
+
+---
+
+## 🧱 OOP Concepts Applied
+
+### 🔒 Encapsulation
+The master list of all challenges is stored in a `private final List<Challenge>`:
+
+```java
+private final List<Challenge> allChallenges;
+```
+
+No external class can directly add, remove, or modify entries in this list. All interactions go through the service methods, which enforce business rules before touching the data.
+
+The public getter returns a **read-only view**:
+```java
+public List<Challenge> getAllChallenges() {
+    return Collections.unmodifiableList(allChallenges);
+}
+```
+This prevents any outside code from silently mutating the registry — a critical protection in a multi-role system.
+
+---
+
+### 🔷 Abstraction
+Callers of `ChallengeService` don't need to know:
+- How challenges are stored internally (`ArrayList`)
+- How IDs are generated (`CHG-1001`, `CHG-1002`, ...)
+- How the search loop works
+- How status filtering is performed
+
+They simply call `searchChallenges("AI")` or `getOpenChallenges()` and receive results. The implementation is completely hidden — this is abstraction at the service layer.
+
+---
+
+### 🧬 Layered Architecture (Service → Model)
+`ChallengeService` sits in the **service layer**, one level above the **model layer**. It coordinates between models without duplicating their logic:
+
+```
+SolveStackApp (main)
+      │
+      ▼
+ChallengeService  ◄── you are here
+      │
+      ├──► Company.createChallenge()   (delegates creation + guard checks)
+      ├──► Challenge.openChallenge()   (delegates status change)
+      └──► Challenge.setAssignedEvaluatorId()  (delegates evaluator link)
+```
+
+This means `ChallengeService` does **not** re-implement login checks or status transitions — it calls the model's own methods and trusts them. This avoids duplicate logic and keeps each class focused on a single responsibility.
+
+---
+
+### 🔁 Single Responsibility Principle
+`ChallengeService` only manages challenges. It does not:
+- Handle submission scoring → that is `EvaluationService`
+- Track individual submissions → that is `SubmissionService`
+- Manage user bans or verifications → that is `Admin`
+
+Each service class has one clearly defined job.
+
+---
+
+## 🔐 Guard Conditions
+
+Every method validates its inputs before acting:
+
+| Condition Checked | Where |
+|---|---|
+| Company reference is not null | `createChallenge()` |
+| Challenge is not OPEN before deletion | `deleteChallenge()` |
+| Requester owns the challenge | `deleteChallenge()` |
+| Evaluator is logged in before assignment | `assignEvaluator()` |
+| Challenge must be PENDING before approval | `approveChallenge()` |
+| Keyword is not blank before search | `searchChallenges()` |
+
+---
+
+## 🆔 Auto ID Generation
+
+Challenge IDs are generated automatically using a `private static` counter:
+
+```java
+private static String generateChallengeId() {
+    return "CHG-" + (++challengeCounter);
+}
+```
+
+- Counter starts at `1000`, so first ID is `CHG-1001`
+- `static` means the counter is shared across all instances of `ChallengeService`
+- Callers never need to supply their own ID — the service handles it
+
+---
+
+## 📋 Method Reference
+
+| Method | Return Type | Description |
+|---|---|---|
+| `createChallenge(...)` | `Challenge` | Creates + registers a new challenge |
+| `deleteChallenge(String id, String requesterId)` | `boolean` | Removes a CLOSED/PENDING challenge |
+| `getAllChallenges()` | `List<Challenge>` | All challenges (read-only) |
+| `getOpenChallenges()` | `List<Challenge>` | Only OPEN challenges |
+| `searchChallenges(String keyword)` | `List<Challenge>` | Keyword search on title + description |
+| `filterByStatus(String status)` | `List<Challenge>` | Filter by OPEN / CLOSED / PENDING |
+| `assignEvaluator(String id, Evaluator e)` | `boolean` | Links an evaluator to a challenge |
+| `approveChallenge(String id)` | `boolean` | Changes PENDING → OPEN |
+| `getChallengeById(String id)` | `Challenge` | Single challenge lookup |
+| `printAllChallenges()` | `void` | Formatted console report |
+| `getTotalChallengeCount()` | `int` | Total count across all statuses |
+
+---
+
+## 🔗 Dependencies
+
+| Class | Why It's Needed |
+|---|---|
+| `models.Challenge` | The core object this service manages |
+| `models.Company` | Challenge creation is delegated to the Company |
+| `models.Evaluator` | Used in `assignEvaluator()` to validate and link |
+
+`ChallengeService` does **not** depend on `User` directly — it works with concrete subclasses (`Company`, `Evaluator`) only where necessary.
+
+---
+
+## 🏗 How ChallengeService Fits in the Architecture
+
+```
+Admin
+  └── calls approveChallenge()
+              │
+              ▼
+      ChallengeService  ◄── central challenge registry
+         │         │
+         │         └── assignEvaluator() ──► Evaluator
+         │
+         └── createChallenge() ──► Company ──► Challenge
+                                                   │
+                                                   └── SubmissionService
+```
+
+---
+
+## 🚀 Future Improvements (Phase 2)
+
+- Replace `ArrayList` with a `HashMap<String, Challenge>` for O(1) ID lookups
+- Add `sortByDeadline()` and `sortByPrize()` methods for Developer browsing
+- Integrate with MySQL via JPA — persist challenges across sessions
+- Add pagination support for `getAllChallenges()` for large datasets
+- Emit events (Observer pattern) when a challenge is approved or closed
