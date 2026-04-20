@@ -1,12 +1,20 @@
 package ui;
 
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import java.awt.*;
 
 public class EvaluatorDashboardUI extends JFrame {
 
     public EvaluatorDashboardUI() {
+        // Check if user is logged in and has Evaluator role
+        UserSession session = UserSession.getInstance();
+        if (!session.isLoggedIn() || !session.hasRole("Evaluator")) {
+            JOptionPane.showMessageDialog(null, "Unauthorized access. Please login as an Evaluator.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+            new LoginUI().setVisible(true);
+            System.exit(0);
+        }
+
         setTitle("SolveStack — Evaluator Panel");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(Theme.WINDOW);
@@ -15,7 +23,7 @@ public class EvaluatorDashboardUI extends JFrame {
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Theme.BG_LIGHT);
-        root.add(Components.navbar("Evaluator", e -> returnToLogin()), BorderLayout.NORTH);
+        root.add(Components.navbar("Evaluator", e -> logout()), BorderLayout.NORTH);
         root.add(buildBody(), BorderLayout.CENTER);
         setContentPane(root);
     }
@@ -105,7 +113,8 @@ public class EvaluatorDashboardUI extends JFrame {
         return row;
     }
 
-    private void returnToLogin() {
+    private void logout() {
+        UserSession.getInstance().logout();
         new LoginUI().setVisible(true);
         this.dispose();
     }

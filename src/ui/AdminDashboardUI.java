@@ -1,12 +1,20 @@
 package ui;
 
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import java.awt.*;
 
 public class AdminDashboardUI extends JFrame {
 
     public AdminDashboardUI() {
+        // Check if user is logged in and has Admin role
+        UserSession session = UserSession.getInstance();
+        if (!session.isLoggedIn() || !session.hasRole("Admin")) {
+            JOptionPane.showMessageDialog(null, "Unauthorized access. Please login as an Admin.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+            new LoginUI().setVisible(true);
+            System.exit(0);
+        }
+
         setTitle("SolveStack — Admin Dashboard");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(ui.Theme.WINDOW);
@@ -15,7 +23,7 @@ public class AdminDashboardUI extends JFrame {
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Theme.BG_LIGHT);
-        root.add(Components.navbar("Admin", e -> returnToLogin()), BorderLayout.NORTH);
+        root.add(Components.navbar("Admin", e -> logout()), BorderLayout.NORTH);
         root.add(buildBody(), BorderLayout.CENTER);
         setContentPane(root);
     }
@@ -162,7 +170,8 @@ public class AdminDashboardUI extends JFrame {
         return card;
     }
 
-    private void returnToLogin() {
+    private void logout() {
+        UserSession.getInstance().logout();
         new LoginUI().setVisible(true);
         this.dispose();
     }

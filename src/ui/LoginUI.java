@@ -1,8 +1,8 @@
 package ui;
 
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import java.awt.*;
 
 public class LoginUI extends JFrame {
 
@@ -105,14 +105,41 @@ public class LoginUI extends JFrame {
         passField.setAlignmentX(LEFT_ALIGNMENT);
         passField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
 
+        // Error message label
+        JLabel errorMsg = new JLabel();
+        errorMsg.setFont(new Font("Trebuchet MS", Font.PLAIN, 12));
+        errorMsg.setForeground(new Color(211, 47, 47));
+        errorMsg.setAlignmentX(LEFT_ALIGNMENT);
+        errorMsg.setVisible(false);
+
         // Sign in button
         JButton signIn = Components.primaryBtn("Sign in");
         signIn.setAlignmentX(LEFT_ALIGNMENT);
         signIn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        signIn.addActionListener(e -> openDashboard());
+        signIn.addActionListener(e -> openDashboard(userField, passField, errorMsg));
+
+        // Sign up link
+        JPanel signupPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        signupPanel.setOpaque(false);
+        signupPanel.setAlignmentX(LEFT_ALIGNMENT);
+        JLabel noAccount = new JLabel("Don't have an account? ");
+        noAccount.setFont(Theme.FONT_SMALL);
+        noAccount.setForeground(Theme.TEXT_MUTED);
+        JButton signupLink = new JButton("Create one");
+        signupLink.setFont(Theme.FONT_SMALL);
+        signupLink.setForeground(Theme.PRIMARY);
+        signupLink.setBorderPainted(false);
+        signupLink.setContentAreaFilled(false);
+        signupLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        signupLink.addActionListener(e -> {
+            new SignupUI().setVisible(true);
+            this.dispose();
+        });
+        signupPanel.add(noAccount);
+        signupPanel.add(signupLink);
 
         // Hint
-        JLabel hint = Components.notifBanner("Select a role and click sign in to explore the dashboard.");
+        JLabel hint = Components.notifBanner("Use demo credentials: alex_kumar / password123 (Developer), acme_corp / company123 (Company), admin_user / admin999 (Admin)");
         hint.setAlignmentX(LEFT_ALIGNMENT);
 
         card.add(logoRow);
@@ -130,8 +157,12 @@ public class LoginUI extends JFrame {
         card.add(passLabel);
         card.add(Box.createVerticalStrut(4));
         card.add(passField);
-        card.add(Box.createVerticalStrut(16));
+        card.add(Box.createVerticalStrut(12));
+        card.add(errorMsg);
+        card.add(Box.createVerticalStrut(8));
         card.add(signIn);
+        card.add(Box.createVerticalStrut(8));
+        card.add(signupPanel);
         card.add(Box.createVerticalStrut(14));
         card.add(hint);
 
@@ -233,11 +264,37 @@ public class LoginUI extends JFrame {
         b.setOpaque(true);
     }
 
-    private void openDashboard() {
-        JFrame dash = switch (selectedRole) {
+    private void openDashboard(JTextField userField, JPasswordField passField, JLabel errorMsg) {
+        String username = userField.getText().trim();
+        String password = new String(passField.getPassword());
+
+        if (username.isBlank() || password.isBlank()) {
+            errorMsg.setText("⚠ Please enter username and password");
+            errorMsg.setVisible(true);
+            return;
+        }
+
+        // Authenticate user
+        UserRepository repo = UserRepository.getInstance();
+        models.User user = repo.authenticate(username, password);
+
+        if (user == null) {
+            errorMsg.setText("⚠ Invalid username or password");
+            errorMsg.setVisible(true);
+            passField.setText("");
+            return;
+        }
+
+        // Store user session
+        String userRole = user.getRole();
+        UserSession.getInstance().setCurrentUser(user, userRole);
+
+        // Route to appropriate dashboard based on actual user role
+        JFrame dash = switch (userRole) {
             case "Developer" -> new DeveloperDashboardUI();
             case "Evaluator" -> new EvaluatorDashboardUI();
             case "Admin"     -> new AdminDashboardUI();
+            case "Company"   -> new CompanyDashboardUI();
             default          -> new CompanyDashboardUI();
         };
         dash.setVisible(true);
