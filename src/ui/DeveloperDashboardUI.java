@@ -12,6 +12,14 @@ public class DeveloperDashboardUI extends JFrame {
     private JButton mineTab;
 
     public DeveloperDashboardUI() {
+        // Check if user is logged in and has Developer role
+        UserSession session = UserSession.getInstance();
+        if (!session.isLoggedIn() || !session.hasRole("Developer")) {
+            JOptionPane.showMessageDialog(null, "Unauthorized access. Please login as a Developer.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+            new LoginUI().setVisible(true);
+            System.exit(0);
+        }
+
         setTitle("SolveStack — Developer Dashboard");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(Theme.WINDOW);
@@ -20,7 +28,7 @@ public class DeveloperDashboardUI extends JFrame {
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Theme.BG_LIGHT);
-        root.add(Components.navbar("Developer", e -> returnToLogin()), BorderLayout.NORTH);
+        root.add(Components.navbar("Developer", e -> logout()), BorderLayout.NORTH);
         root.add(buildBody(), BorderLayout.CENTER);
         setContentPane(root);
     }
@@ -186,7 +194,8 @@ public class DeveloperDashboardUI extends JFrame {
         return row;
     }
 
-    private void returnToLogin() {
+    private void logout() {
+        UserSession.getInstance().logout();
         new LoginUI().setVisible(true);
         this.dispose();
     }
