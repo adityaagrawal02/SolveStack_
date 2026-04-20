@@ -1,12 +1,11 @@
 package services;
 
-import models.Challenge;
-import models.Developer;
-import models.Submission;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import models.Challenge;
+import models.Developer;
+import models.Submission;
 
 /**
  * ============================================================
@@ -43,7 +42,7 @@ public class SubmissionService {
     //  CONSTANTS – Submission status labels
     // ─────────────────────────────────────────────────────────
 
-    public static final String STATUS_PENDING    = "PENDING";
+    public static final String STATUS_PENDING    = "SUBMITTED";
     public static final String STATUS_UNDER_REVIEW = "UNDER_REVIEW";
     public static final String STATUS_ACCEPTED   = "ACCEPTED";
     public static final String STATUS_REJECTED   = "REJECTED";
@@ -105,7 +104,7 @@ public class SubmissionService {
             System.out.println("[SubmissionService] ERROR: Challenge reference is null.");
             return null;
         }
-        if (!challenge.getStatus().equalsIgnoreCase("OPEN")) {
+        if (challenge.getStatus() != Challenge.Status.OPEN) {
             System.out.println("[SubmissionService] ERROR: Challenge '"
                     + challenge.getTitle() + "' is not open for submissions. "
                     + "Current status: " + challenge.getStatus());
@@ -113,7 +112,7 @@ public class SubmissionService {
         }
 
         // ── Check for duplicate submission ──────────────────
-        if (hasAlreadySubmitted(developer.getUserId(), challenge.getChallengeId())) {
+        if (hasAlreadySubmitted(developer.getUsername(), challenge.getChallengeId())) {
             System.out.println("[SubmissionService] ERROR: Developer '"
                     + developer.getUsername()
                     + "' has already submitted to challenge: "
@@ -131,8 +130,8 @@ public class SubmissionService {
 
         Submission submission = new Submission(
                 newId,
-                developer.getUserId(),
                 challenge.getChallengeId(),
+            developer.getUsername(),
                 solutionText
         );
 
@@ -151,7 +150,7 @@ public class SubmissionService {
         challenge.addSubmission(submission);
 
         // Let the Developer track it
-        developer.trackSubmission(submission);
+        developer.trackSubmission(submission.getSubmissionId());
 
         System.out.println("[SubmissionService] Submission '" + newId
                 + "' received from '" + developer.getUsername()
@@ -202,17 +201,17 @@ public class SubmissionService {
             System.out.println("[SubmissionService] ERROR: Submission '" + submissionId + "' not found.");
             return false;
         }
-        if (!target.getDeveloperId().equals(developerId)) {
+        if (!target.getDeveloperUsername().equals(developerId)) {
             System.out.println("[SubmissionService] UNAUTHORIZED: Only the submitting developer can withdraw this submission.");
             return false;
         }
-        if (!target.getStatus().equalsIgnoreCase(STATUS_PENDING)) {
+        if (!statusEquals(target, STATUS_PENDING)) {
             System.out.println("[SubmissionService] ERROR: Only PENDING submissions can be withdrawn. "
                     + "Current status: " + target.getStatus());
             return false;
         }
 
-        target.updateStatus(STATUS_WITHDRAWN);
+        target.updateStatus(toStatus(STATUS_WITHDRAWN));
         System.out.println("[SubmissionService] Submission '" + submissionId
                 + "' has been withdrawn by developer ID: " + developerId);
         return true;
@@ -259,7 +258,7 @@ public class SubmissionService {
 
         List<Submission> results = new ArrayList<>();
         for (Submission s : allSubmissions) {
-            if (s.getDeveloperId().equals(developerId)) {
+            if (s.getDeveloperUsername().equals(developerId)) {
                 results.add(s);
             }
         }
@@ -292,13 +291,13 @@ public class SubmissionService {
             System.out.println("[SubmissionService] ERROR: Submission '" + submissionId + "' not found.");
             return false;
         }
-        if (target.getStatus().equalsIgnoreCase(STATUS_WITHDRAWN)) {
+        if (statusEquals(target, STATUS_WITHDRAWN)) {
             System.out.println("[SubmissionService] ERROR: Cannot update a WITHDRAWN submission.");
             return false;
         }
 
-        String previousStatus = target.getStatus();
-        target.updateStatus(newStatus);
+        String previousStatus = target.getStatus().name();
+        target.updateStatus(toStatus(newStatus));
         System.out.println("[SubmissionService] Submission '" + submissionId
                 + "' status changed: " + previousStatus + " → " + newStatus.toUpperCase());
         return true;
@@ -322,7 +321,7 @@ public class SubmissionService {
     public List<Submission> getPendingSubmissions() {
         List<Submission> pending = new ArrayList<>();
         for (Submission s : allSubmissions) {
-            if (s.getStatus().equalsIgnoreCase(STATUS_PENDING)) {
+            if (statusEquals(s, STATUS_PENDING)) {
                 pending.add(s);
             }
         }
@@ -367,7 +366,7 @@ public class SubmissionService {
         } else {
             for (Submission s : allSubmissions) {
                 System.out.println("  ID          : " + s.getSubmissionId());
-                System.out.println("  Developer   : " + s.getDeveloperId());
+                System.out.println("  Developer   : " + s.getDeveloperUsername());
                 System.out.println("  Challenge   : " + s.getChallengeId());
                 System.out.println("  Status      : " + s.getStatus());
                 System.out.println("  Score       : " + (s.getScore() == 0 ? "Not yet scored" : s.getScore()));
@@ -409,9 +408,9 @@ public class SubmissionService {
      */
     private boolean hasAlreadySubmitted(String developerId, String challengeId) {
         for (Submission s : allSubmissions) {
-            if (s.getDeveloperId().equals(developerId)
+            if (s.getDeveloperUsername().equals(developerId)
                     && s.getChallengeId().equals(challengeId)
-                    && !s.getStatus().equalsIgnoreCase(STATUS_WITHDRAWN)) {
+                    && !statusEquals(s, STATUS_WITHDRAWN)) {
                 return true;
             }
         }
@@ -432,6 +431,21 @@ public class SubmissionService {
                 status.equalsIgnoreCase(STATUS_REJECTED)      ||
                 status.equalsIgnoreCase(STATUS_WITHDRAWN)
         );
+    }
+
+    private boolean statusEquals(Submission submission, String status) {
+        return submission.getStatus().name().equalsIgnoreCase(status);
+    }
+
+    private Submission.Status toStatus(String status) {
+        return switch (status.toUpperCase()) {
+            case STATUS_PENDING -> Submission.Status.SUBMITTED;
+            case STATUS_UNDER_REVIEW -> Submission.Status.UNDER_REVIEW;
+            case STATUS_ACCEPTED -> Submission.Status.ACCEPTED;
+            case STATUS_REJECTED -> Submission.Status.REJECTED;
+            case STATUS_WITHDRAWN -> Submission.Status.WITHDRAWN;
+            default -> throw new IllegalArgumentException("Unsupported submission status: " + status);
+        };
     }
 
     /**

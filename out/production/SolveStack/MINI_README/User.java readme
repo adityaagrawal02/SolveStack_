@@ -1,0 +1,140 @@
+# 📄 User.java — README
+
+**Package:** `models`
+**Type:** `abstract class`
+**Project:** SolveStack – Open Innovation Collaboration Platform
+
+---
+
+## 📌 What Is This File?
+
+`User.java` is the **root base class** of the entire SolveStack system. Every person who uses the platform — whether they are a Company, Developer, Evaluator, or Admin — is ultimately a `User`. This file defines the shared identity, authentication, and profile management behaviour that all roles inherit.
+
+Because it is declared `abstract`, you can never create a plain `User` object directly. You must always work through one of its concrete subclasses.
+
+---
+
+## 🎯 Purpose & Responsibility
+
+| Responsibility | How It Is Handled |
+|---|---|
+| Store user identity | Private fields: `userId`, `username`, `email` |
+| Authenticate users | `login(String password)` method |
+| End user sessions | `logout()` method |
+| Show role dashboard | `viewDashboard()` — delegates to subclass |
+| Allow profile edits | `updateProfile(...)` method |
+| Enforce role contracts | Three `abstract` methods subclasses must implement |
+
+---
+
+## 🧱 OOP Concepts Applied
+
+### 🔒 Encapsulation
+All nine fields in this class are declared `private`. This means no external class can directly read or write a user's password, ban status, or login state. Access is strictly controlled:
+
+- **Public getters** allow reading non-sensitive data (`getUsername()`, `getEmail()`, etc.)
+- **Protected setters** (`setVerified()`, `setBanned()`) restrict mutation to subclasses and trusted internal code only
+- **`passwordHash`** has no getter at all — it can never be read once stored, only compared internally
+
+This prevents accidental or malicious tampering with a user's credentials or account state from outside the `models` package.
+
+---
+
+### 🔷 Abstraction
+Three methods are declared `abstract`, meaning they have no body in `User.java`. They exist purely as a **contract** — a guarantee that every subclass will provide its own implementation:
+
+```java
+public abstract String getRole();
+protected abstract void displayRoleDashboard();
+public abstract void onAccountRemoved();
+```
+
+- `getRole()` — Each role returns its own label: `"Company"`, `"Developer"`, etc.
+- `displayRoleDashboard()` — Each role shows different dashboard content
+- `onAccountRemoved()` — Each role performs its own cleanup when deleted
+
+If a subclass forgets to implement even one of these, the Java compiler will throw an error. This is abstraction enforcing correctness at compile time.
+
+---
+
+### 🧬 Inheritance
+`User.java` is designed to be **extended, not instantiated**. The four subclasses of the system all inherit from it:
+
+```
+User (abstract)
+ ├── Company.java
+ ├── Developer.java
+ ├── Evaluator.java
+ └── Admin.java
+```
+
+Every subclass automatically gets `login()`, `logout()`, `updateProfile()`, and `viewDashboard()` without rewriting them. This follows the **DRY principle** (Don't Repeat Yourself).
+
+---
+
+### 🔀 Polymorphism
+`viewDashboard()` in `User.java` is a **concrete method** that calls `displayRoleDashboard()` internally. Since `displayRoleDashboard()` is abstract and overridden differently in each subclass, the same `viewDashboard()` call produces a completely different result depending on which subclass object you're working with.
+
+```java
+User u1 = new Company(...);
+User u2 = new Developer(...);
+
+u1.viewDashboard(); // Shows company challenges, submission counts
+u2.viewDashboard(); // Shows developer's submissions and tracked challenges
+```
+
+This is the **Template Method Pattern** — the skeleton of the algorithm lives in `User`, the variable parts live in each subclass.
+
+---
+
+## 🔐 Password Security
+
+Passwords are **never stored as plain text**. The moment a password is passed into the constructor or `updateProfile()`, it is immediately passed through `hashPassword()` and the original string is discarded.
+
+```java
+this.passwordHash = hashPassword(password);
+```
+
+In the current prototype, `hashPassword()` uses a simple polynomial rolling hash for demonstration. In **Phase 2**, this will be replaced with **BCrypt** — an industry-standard adaptive hashing algorithm.
+
+---
+
+## 📋 Method Reference
+
+| Method | Access | Description |
+|---|---|---|
+| `login(String password)` | `public` | Verifies password, starts session |
+| `logout()` | `public` | Ends current session |
+| `viewDashboard()` | `public` | Prints dashboard (common + role-specific) |
+| `updateProfile(...)` | `public` | Updates username, bio, contact, password |
+| `getRole()` | `public abstract` | Returns role label (implemented in subclass) |
+| `displayRoleDashboard()` | `protected abstract` | Role-specific dashboard section |
+| `onAccountRemoved()` | `public abstract` | Cleanup logic on account deletion |
+| `setVerified(boolean)` | `protected` | Called by Admin to verify an account |
+| `setBanned(boolean)` | `protected` | Called by Admin to ban/unban a user |
+
+---
+
+## ⚠️ Guard Conditions
+
+Every method that modifies state or displays sensitive data checks two conditions before proceeding:
+
+1. **`isLoggedIn()`** — Is there an active session?
+2. **`isBanned()`** — Has this account been suspended?
+
+If either condition fails, the method prints an appropriate message and returns early without performing any action.
+
+---
+
+## 🔗 Dependencies
+
+`User.java` has **zero imports** from within the project. It is a pure base class that knows nothing about `Challenge`, `Submission`, or any service. This keeps the base class clean, testable, and decoupled from the rest of the system.
+
+---
+
+## 🚀 Future Improvements (Phase 2)
+
+- Replace `hashPassword()` with `BCrypt.hashpw()` from the Spring Security library
+- Add `lastLoginTime` timestamp field
+- Integrate JWT token generation inside `login()` for stateless authentication
+- Persist user state to a MySQL database via JPA/Hibernate

@@ -1,0 +1,233 @@
+# 📄 SubmissionService.java — README
+
+**Package:** `services`
+**Type:** `public class`
+**Project:** SolveStack – Open Innovation Collaboration Platform
+
+---
+
+## 📌 What Is This File?
+
+`SubmissionService.java` is the **service layer** responsible for every submission-related operation on the SolveStack platform. When a Developer submits a solution to a challenge, that submission passes through this service — it is validated, registered in the platform-wide registry, linked to the Challenge, and tracked by the Developer.
+
+This class sits between the model layer (`Submission`, `Developer`, `Challenge`) and the rest of the application, making sure all business rules are enforced consistently in one place.
+
+---
+
+## 🎯 Purpose & Responsibility
+
+| Responsibility | Method |
+|---|---|
+| Submit a solution to a challenge | `submitSolution(...)` |
+| Validate submission content | `validateSubmission(String text)` |
+| Withdraw a previously made submission | `withdrawSubmission(String id, String devId)` |
+| Fetch all submissions for a challenge | `fetchSubmissionsByChallenge(String challengeId)` |
+| Fetch all submissions by a developer | `fetchSubmissionsByDeveloper(String developerId)` |
+| Update the status of a submission | `updateSubmissionStatus(String id, String status)` |
+| Get all submissions (platform-wide) | `getAllSubmissions()` |
+| Get only pending submissions | `getPendingSubmissions()` |
+| Look up a submission by ID | `getSubmissionById(String id)` |
+| Print a full platform submission report | `printAllSubmissions()` |
+
+---
+
+## 🧱 OOP Concepts Applied
+
+### 🔒 Encapsulation
+The complete submission registry is stored in a `private final List<Submission>`:
+
+```java
+private final List<Submission> allSubmissions;
+```
+
+No outside class can directly add, remove, or modify this list. All interactions pass through the service's own methods, each of which applies business rules before touching the data.
+
+Five status constants are defined as `public static final` strings:
+```java
+public static final String STATUS_PENDING      = "PENDING";
+public static final String STATUS_UNDER_REVIEW = "UNDER_REVIEW";
+public static final String STATUS_ACCEPTED     = "ACCEPTED";
+public static final String STATUS_REJECTED     = "REJECTED";
+public static final String STATUS_WITHDRAWN    = "WITHDRAWN";
+```
+Using constants instead of raw strings prevents typos and makes status comparisons safe and consistent across the entire codebase.
+
+---
+
+### 🔷 Abstraction
+Callers of `SubmissionService` don't need to know:
+- How the duplicate-submission check works internally (`hasAlreadySubmitted()`)
+- How IDs are generated (`SUB-2001`, `SUB-2002`, ...)
+- How status validation is performed (`isValidStatus()`)
+- How the list is searched (`findById()`)
+
+They simply call `submitSolution(developer, challenge, ...)` and the service handles everything. The implementation complexity is completely hidden — this is abstraction at the service layer.
+
+---
+
+### 🧬 Layered Architecture (Service → Model)
+`SubmissionService` coordinates three models without duplicating any of their logic:
+
+```
+SolveStackApp (main)
+      │
+      ▼
+SubmissionService  ◄── you are here
+      │
+      ├──► Developer.trackSubmission()   (tells developer about their new submission)
+      ├──► Challenge.addSubmission()     (registers submission inside the challenge)
+      └──► Submission.attachGithubLink() (sets optional extras on the submission)
+```
+
+Each model handles its own internal state. `SubmissionService` only orchestrates the connections between them.
+
+---
+
+### 🔁 Single Responsibility Principle
+`SubmissionService` manages submission **lifecycle only**:
+
+| Concern | Where It Lives |
+|---|---|
+| Submission creation, tracking, withdrawal | `SubmissionService` ✔ |
+| Scoring and feedback | `EvaluationService` |
+| Challenge approval and evaluator assignment | `ChallengeService` |
+| User bans and verification | `Admin` |
+
+---
+
+## 🔐 Guard Conditions in `submitSolution()`
+
+`submitSolution()` is the most important method in this class. It runs five checks before creating anything:
+
+| # | Check | Reason |
+|---|---|---|
+| 1 | Developer is not null | Prevents NullPointerException |
+| 2 | Developer is logged in | Enforces authentication |
+| 3 | Challenge is not null | Prevents NullPointerException |
+| 4 | Challenge status is OPEN | Prevents late or invalid submissions |
+| 5 | Developer hasn't already submitted | Prevents duplicate entries |
+| 6 | Solution text passes `validateSubmission()` | Ensures quality content |
+
+Only after all six pass does the submission get created and registered.
+
+---
+
+## 🔄 Submission Status Lifecycle
+
+A submission moves through these states in order:
+
+```
+[Created] ──► PENDING ──► UNDER_REVIEW ──► ACCEPTED
+                                      └──► REJECTED
+              └──► WITHDRAWN  (Developer retracts before review)
+```
+
+- `PENDING` → Default state when first submitted
+- `UNDER_REVIEW` → Evaluator has picked it up
+- `ACCEPTED` → Evaluator approved the solution
+- `REJECTED` → Evaluator rejected the solution
+- `WITHDRAWN` → Developer pulled it back (only possible from PENDING)
+
+`updateSubmissionStatus()` enforces that you cannot update a `WITHDRAWN` submission — once withdrawn, it is final.
+
+---
+
+## 🛡 Duplicate Submission Prevention
+
+`hasAlreadySubmitted()` scans the registry to ensure a Developer cannot submit twice to the same challenge:
+
+```java
+private boolean hasAlreadySubmitted(String developerId, String challengeId) {
+    for (Submission s : allSubmissions) {
+        if (s.getDeveloperId().equals(developerId)
+                && s.getChallengeId().equals(challengeId)
+                && !s.getStatus().equalsIgnoreCase(STATUS_WITHDRAWN)) {
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+Note: A withdrawn submission does **not** block re-submission. If a Developer withdraws their solution, they are allowed to submit a new one — this is intentional and fair.
+
+---
+
+## 🆔 Auto ID Generation
+
+Submission IDs are generated automatically:
+```java
+private static String generateSubmissionId() {
+    return "SUB-" + (++submissionCounter);
+}
+```
+- Counter starts at `2000`, so first ID is `SUB-2001`
+- IDs are distinct from Challenge IDs (`CHG-`) for easy identification in logs
+
+---
+
+## 📋 Full Method Reference
+
+| Method | Return Type | Access | Description |
+|---|---|---|---|
+| `submitSolution(...)` | `Submission` | `public` | Full submission pipeline with validation |
+| `validateSubmission(String text)` | `boolean` | `public` | Content length and null checks |
+| `withdrawSubmission(String id, String devId)` | `boolean` | `public` | Retracts a PENDING submission |
+| `fetchSubmissionsByChallenge(String id)` | `List<Submission>` | `public` | All submissions for one challenge |
+| `fetchSubmissionsByDeveloper(String id)` | `List<Submission>` | `public` | All submissions by one developer |
+| `updateSubmissionStatus(String id, String status)` | `boolean` | `public` | Changes submission status |
+| `getAllSubmissions()` | `List<Submission>` | `public` | Platform-wide read-only list |
+| `getPendingSubmissions()` | `List<Submission>` | `public` | Only PENDING submissions |
+| `getSubmissionById(String id)` | `Submission` | `public` | Single submission lookup |
+| `getTotalSubmissionCount()` | `int` | `public` | Count across all statuses |
+| `printAllSubmissions()` | `void` | `public` | Formatted console report |
+| `findById(String id)` | `Submission` | `private` | Internal ID lookup helper |
+| `hasAlreadySubmitted(String devId, String chalId)` | `boolean` | `private` | Duplicate check |
+| `isValidStatus(String status)` | `boolean` | `private` | Status whitelist validator |
+| `generateSubmissionId()` | `String` | `private static` | Auto ID generator |
+
+---
+
+## 🔗 Dependencies
+
+| Class | Why It's Needed |
+|---|---|
+| `models.Submission` | The core object this service creates and manages |
+| `models.Developer` | Submission is made by a Developer; `trackSubmission()` is called on them |
+| `models.Challenge` | `addSubmission()` is called on the challenge to keep its list updated |
+
+`SubmissionService` does **not** depend on `EvaluationService` — scoring is a separate concern handled independently.
+
+---
+
+## 🏗 How SubmissionService Fits in the Architecture
+
+```
+Developer
+  └── calls submitSolution()
+                │
+                ▼
+        SubmissionService  ◄── platform submission registry
+               │
+               ├── validates content
+               ├── checks for duplicates
+               ├── creates Submission object
+               ├── registers in allSubmissions list
+               ├── calls Challenge.addSubmission()
+               └── calls Developer.trackSubmission()
+                              │
+                              ▼
+                      EvaluationService
+                      (picks up PENDING submissions for scoring)
+```
+
+---
+
+## 🚀 Future Improvements (Phase 2)
+
+- Replace `ArrayList` with `HashMap<String, Submission>` for O(1) ID lookups
+- Add file storage integration for `uploadDocument()` (AWS S3 / local disk)
+- Add submission deadline enforcement using `LocalDate` comparison
+- Emit notification events when a submission status changes (Observer Pattern)
+- Paginate `getAllSubmissions()` for large-scale platform data
+- Persist submission data to MySQL via JPA/Hibernate

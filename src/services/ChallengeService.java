@@ -1,12 +1,13 @@
 package services;
 
-import models.Challenge;
-import models.Company;
-import models.Evaluator;
-
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import models.Challenge;
+import models.Company;
+import models.Evaluator;
 
 /**
  * ============================================================
@@ -83,9 +84,17 @@ public class ChallengeService {
         String newId = generateChallengeId();
 
         // Delegates to Company — enforces login + verification guard
-        Challenge created = company.createChallenge(
-                newId, title, description, deadline, prizeAmount
-        );
+        int durationDays = 30;
+        if (deadline != null && !deadline.isBlank()) {
+            try {
+                long days = ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.parse(deadline));
+                durationDays = (int) Math.max(1, days);
+            } catch (Exception ignored) {
+                // Falls back to default duration if deadline parsing fails.
+            }
+        }
+
+        Challenge created = company.createChallenge(title, description, prizeAmount, durationDays);
 
         if (created != null) {
             allChallenges.add(created);
@@ -113,11 +122,11 @@ public class ChallengeService {
             System.out.println("[ChallengeService] ERROR: Challenge '" + challengeId + "' not found.");
             return false;
         }
-        if (target.getStatus().equalsIgnoreCase("OPEN")) {
+        if (target.getStatus() == Challenge.Status.OPEN) {
             System.out.println("[ChallengeService] ERROR: Cannot delete an OPEN challenge. Close it first.");
             return false;
         }
-        if (!target.getPostedByCompanyId().equals(requesterId)) {
+        if (!target.getPostedBy().getUserId().equals(requesterId)) {
             System.out.println("[ChallengeService] UNAUTHORIZED: Only the owning company or Admin can delete this challenge.");
             return false;
         }
@@ -147,7 +156,7 @@ public class ChallengeService {
     public List<Challenge> getOpenChallenges() {
         List<Challenge> open = new ArrayList<>();
         for (Challenge c : allChallenges) {
-            if (c.getStatus().equalsIgnoreCase("OPEN")) {
+            if (c.getStatus() == Challenge.Status.OPEN) {
                 open.add(c);
             }
         }
@@ -198,8 +207,16 @@ public class ChallengeService {
         }
 
         List<Challenge> filtered = new ArrayList<>();
+        Challenge.Status expected;
+        try {
+            expected = Challenge.Status.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            System.out.println("[ChallengeService] Invalid status filter: " + status);
+            return Collections.emptyList();
+        }
+
         for (Challenge c : allChallenges) {
-            if (c.getStatus().equalsIgnoreCase(status)) {
+            if (c.getStatus() == expected) {
                 filtered.add(c);
             }
         }
@@ -233,7 +250,7 @@ public class ChallengeService {
             System.out.println("[ChallengeService] ERROR: Challenge '" + challengeId + "' not found.");
             return false;
         }
-        if (!target.getStatus().equalsIgnoreCase("OPEN")) {
+        if (target.getStatus() != Challenge.Status.OPEN) {
             System.out.println("[ChallengeService] ERROR: Evaluators can only be assigned to OPEN challenges.");
             return false;
         }
@@ -258,8 +275,8 @@ public class ChallengeService {
             System.out.println("[ChallengeService] ERROR: Challenge '" + challengeId + "' not found.");
             return false;
         }
-        if (!target.getStatus().equalsIgnoreCase("PENDING")) {
-            System.out.println("[ChallengeService] ERROR: Only PENDING challenges can be approved. "
+        if (target.getStatus() != Challenge.Status.UNDER_REVIEW) {
+            System.out.println("[ChallengeService] ERROR: Only UNDER_REVIEW challenges can be approved. "
                     + "Current status: " + target.getStatus());
             return false;
         }
@@ -302,7 +319,7 @@ public class ChallengeService {
                 System.out.println("  Status  : " + c.getStatus());
                 System.out.println("  Deadline: " + c.getDeadline());
                 System.out.println("  Prize   : $" + c.getPrizeAmount());
-                System.out.println("  Submissions: " + c.getSubmissionCount());
+                System.out.println("  Submissions: " + c.getSubmissions().size());
                 System.out.println("  ----------------------------------------");
             }
         }

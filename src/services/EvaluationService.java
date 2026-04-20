@@ -1,4 +1,9 @@
-package models;
+package services;
+
+import models.Developer;
+import models.Evaluator;
+import models.Submission;
+
 public class EvaluationService {
 
     /**
