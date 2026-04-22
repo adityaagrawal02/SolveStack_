@@ -1,0 +1,183 @@
+# 📄 Company.java — README
+
+**Package:** `models`
+**Type:** `public class` (extends `User`)
+**Project:** SolveStack – Open Innovation Collaboration Platform
+
+---
+
+## 📌 What Is This File?
+
+`Company.java` represents a **registered company** on the SolveStack platform. A Company is a special type of User whose primary purpose is to **post innovation challenges** and **review solutions** submitted by Developers.
+
+This class extends `User`, which means it inherits all authentication and profile management capabilities, and adds its own layer of challenge management on top.
+
+---
+
+## 🎯 Purpose & Responsibility
+
+| Responsibility | How It Is Handled |
+|---|---|
+| Represent a company identity | Fields: `companyName`, `industry`, `registrationNumber` |
+| Post new challenges | `createChallenge(...)` method |
+| Modify existing challenges | `editChallenge(...)` method |
+| Remove active challenges | `closeChallenge(String challengeId)` |
+| Review incoming submissions | `viewSubmissions(String challengeId)` |
+| Update challenge deadlines | `updateChallengeDeadline(...)` method |
+| Track total submissions | `totalSubmissionsReceived` counter |
+
+---
+
+## 🧱 OOP Concepts Applied
+
+### 🧬 Inheritance
+`Company` extends `User`, which means:
+
+- It **inherits** `login()`, `logout()`, `updateProfile()`, and `viewDashboard()` from `User` — no need to rewrite these.
+- It gains all encapsulated fields from `User`: `userId`, `username`, `email`, `passwordHash`, `isLoggedIn`, `isVerified`, `isBanned`.
+- The constructor calls `super(userId, username, email, password)` as its **first line**, ensuring the parent is properly initialised before adding company-specific fields.
+
+This is the single most important benefit of inheritance — shared behaviour written once, used everywhere.
+
+```java
+public class Company extends User {
+    // Inherits login(), logout(), updateProfile(), viewDashboard()
+    // Adds: createChallenge(), editChallenge(), closeChallenge(), viewSubmissions()
+}
+```
+
+---
+
+### 🔒 Encapsulation
+Company-specific data is stored in private fields:
+
+```java
+private String       companyName;
+private String       industry;
+private String       website;
+private String       registrationNumber;
+private final List<Challenge> postedChallenges;
+private int          totalSubmissionsReceived;
+```
+
+The `postedChallenges` list is especially important. Rather than exposing the raw `ArrayList`, the getter returns a **read-only wrapper**:
+
+```java
+public List<Challenge> getPostedChallenges() {
+    return Collections.unmodifiableList(postedChallenges);
+}
+```
+
+This means external classes (like `ChallengeService`) can see the list of challenges but cannot add or remove items from it directly. The only way to add a challenge is through `createChallenge()`, which enforces all the business rules (login check, verification check, etc.).
+
+---
+
+### 🔀 Polymorphism
+`Company` overrides two methods from `User`:
+
+**1. `getRole()`**
+```java
+@Override
+public String getRole() {
+    return "Company";
+}
+```
+When `viewDashboard()` in the parent class calls `getRole()`, it receives `"Company"` from this override. A `Developer` object would return `"Developer"` from its own override of the same method. Same call, different result — this is runtime polymorphism.
+
+**2. `displayRoleDashboard()`**
+The parent's `viewDashboard()` always calls this protected method after printing the common header. Because `Company` overrides it, the company dashboard shows company-specific data: industry, posted challenges, submission counts, and a live challenge list. A `Developer` object would show an entirely different set of information from its own override.
+
+---
+
+### 🔷 Abstraction
+`Company` fulfils all three abstract contracts inherited from `User`:
+
+| Abstract Method | Company's Implementation |
+|---|---|
+| `getRole()` | Returns `"Company"` |
+| `displayRoleDashboard()` | Prints challenge list and submission stats |
+| `onAccountRemoved()` | Closes all open challenges and clears the list |
+
+If any one of these were missing, the Java compiler would refuse to compile the file. This is abstraction acting as a safety net.
+
+---
+
+## 🔐 Access & Security Guards
+
+Every Company method that performs an action checks two things before proceeding:
+
+### Check 1 — Must Be Logged In
+```java
+if (!isLoggedIn()) {
+    System.out.println("[ERROR] You must be logged in to post a challenge.");
+    return null;
+}
+```
+`isLoggedIn()` is a method inherited from `User`. A Company cannot create, edit, or close challenges without an active session.
+
+### Check 2 — Must Be Verified (for challenge creation)
+```java
+if (!isVerified()) {
+    System.out.println("[ERROR] Your account must be verified by Admin before posting challenges.");
+    return null;
+}
+```
+`isVerified()` is also inherited from `User`. It is set to `true` only when an `Admin` calls `setVerified(true)` on the account. This prevents fake or unverified companies from flooding the platform with challenges.
+
+---
+
+## 📋 Method Reference
+
+| Method | Access | Description |
+|---|---|---|
+| `createChallenge(...)` | `public` | Creates and registers a new challenge |
+| `editChallenge(...)` | `public` | Updates title or description of a challenge |
+| `closeChallenge(String id)` | `public` | Marks a challenge as CLOSED |
+| `viewSubmissions(String id)` | `public` | Lists all submissions for a challenge |
+| `updateChallengeDeadline(...)` | `public` | Changes the deadline of a challenge |
+| `incrementSubmissionCount()` | `public` | Called by `SubmissionService` when a new submission arrives |
+| `getRole()` | `public` | Returns `"Company"` |
+| `displayRoleDashboard()` | `protected` | Renders company-specific dashboard content |
+| `onAccountRemoved()` | `public` | Closes all challenges and clears data on deletion |
+| `findChallengeById(String id)` | `private` | Internal helper to locate a challenge by ID |
+
+---
+
+## 🔗 Dependencies
+
+`Company.java` depends on two other model classes:
+
+| Class | Why It's Needed |
+|---|---|
+| `User` | Parent class — provides identity, auth, and session management |
+| `Challenge` | The core object Company creates and manages |
+| `Submission` | Used inside `viewSubmissions()` to display submission details |
+
+`Company` does not directly depend on any service class. Business logic like searching challenges globally or assigning evaluators lives in `ChallengeService` and `SubmissionService`.
+
+---
+
+## 🏗 How Company Fits in the Architecture
+
+```
+User (abstract)
+ └── Company
+       │
+       ├── creates ──────────► Challenge
+       │                           │
+       │                           └── contains ──► List<Submission>
+       │
+       └── reviewed by ─────────► Admin (via setVerified / setBanned)
+```
+
+A `Company` owns its `Challenge` objects. Each `Challenge` holds a list of `Submission` objects created by `Developer` users. The `Evaluator` scores those submissions. The `Admin` governs whether a Company is allowed to operate on the platform.
+
+---
+
+## 🚀 Future Improvements
+
+- Add a `List<String> preferredDomains` field for challenge category filtering
+- Allow a Company to directly message a `Developer` whose submission scored highest
+- Integrate with `EvaluationService` to automatically notify the Company when results are published
+- Persist challenge history to a MySQL database even after account removal
+- Add file upload support for attaching challenge briefs (PDF, DOCX)
