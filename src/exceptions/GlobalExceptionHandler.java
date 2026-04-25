@@ -1,9 +1,10 @@
 package exceptions;
 
-import java.awt.Component;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import javax.swing.JOptionPane;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 
 /**
  * Centralized exception handling utilities for SolveStack.
@@ -23,49 +24,37 @@ public final class GlobalExceptionHandler {
         logToConsole(ex);
     }
 
-    public static void handleAndShow(Exception ex, Component parent) {
+    public static void handleAndShow(Exception ex, Object parent) {
         logToConsole(ex);
         showDialog(ex, parent);
     }
 
-    public static void handleUserNotFound(UserNotFoundException ex, Component parent) {
+    public static void handleUserNotFound(UserNotFoundException ex, Object parent) {
         logToConsole(ex);
-        JOptionPane.showMessageDialog(
-                parent,
+        showAlert("User Not Found",
                 "No account found for: \"" + ex.getIdentifier() + "\"\nPlease check your username or sign up.",
-                "User Not Found",
-                JOptionPane.WARNING_MESSAGE
-        );
+                Alert.AlertType.WARNING);
     }
 
-    public static void handleUnauthorized(UnauthorizedAccessException ex, Component parent) {
+    public static void handleUnauthorized(UnauthorizedAccessException ex, Object parent) {
         logToConsole(ex);
-        JOptionPane.showMessageDialog(
-                parent,
+        showAlert("Unauthorized Action",
                 "Access Denied.\nYour role ('" + ex.getUserRole() + "') is not permitted to: " + ex.getAttemptedAction(),
-                "Unauthorized Action",
-                JOptionPane.ERROR_MESSAGE
-        );
+                Alert.AlertType.ERROR);
     }
 
-    public static void handleDeadlinePassed(SubmissionDeadlineException ex, Component parent) {
+    public static void handleDeadlinePassed(SubmissionDeadlineException ex, Object parent) {
         logToConsole(ex);
-        JOptionPane.showMessageDialog(
-                parent,
+        showAlert("Deadline Passed",
                 "Submission failed.\nThe deadline for \"" + ex.getChallengeTitle() + "\" passed on " + ex.getDeadline() + ".",
-                "Deadline Passed",
-                JOptionPane.WARNING_MESSAGE
-        );
+                Alert.AlertType.WARNING);
     }
 
-    public static void handleChallengeNotFound(ChallengeNotFoundException ex, Component parent) {
+    public static void handleChallengeNotFound(ChallengeNotFoundException ex, Object parent) {
         logToConsole(ex);
-        JOptionPane.showMessageDialog(
-                parent,
+        showAlert("Challenge Not Found",
                 "Challenge not found (ID: " + ex.getChallengeId() + ").\nIt may have been removed.",
-                "Challenge Not Found",
-                JOptionPane.WARNING_MESSAGE
-        );
+                Alert.AlertType.WARNING);
     }
 
     private static void logToConsole(Exception ex) {
@@ -84,37 +73,51 @@ public final class GlobalExceptionHandler {
         }
     }
 
-    private static void showDialog(Exception ex, Component parent) {
+    private static void showDialog(Exception ex, Object parent) {
         String title;
         String message;
-        int dialogType;
+        Alert.AlertType dialogType;
 
         if (ex instanceof UserNotFoundException userNotFoundException) {
             title = "User Not Found";
             message = "No account found for: \"" + userNotFoundException.getIdentifier() + "\"";
-            dialogType = JOptionPane.WARNING_MESSAGE;
+            dialogType = Alert.AlertType.WARNING;
         } else if (ex instanceof UnauthorizedAccessException unauthorizedAccessException) {
             title = "Access Denied";
             message = "You do not have permission to perform this action.\n(" + unauthorizedAccessException.getAttemptedAction() + ")";
-            dialogType = JOptionPane.ERROR_MESSAGE;
+            dialogType = Alert.AlertType.ERROR;
         } else if (ex instanceof SubmissionDeadlineException submissionDeadlineException) {
             title = "Deadline Passed";
             message = "The submission deadline for \"" + submissionDeadlineException.getChallengeTitle() + "\" has passed.";
-            dialogType = JOptionPane.WARNING_MESSAGE;
+            dialogType = Alert.AlertType.WARNING;
         } else if (ex instanceof ChallengeNotFoundException challengeNotFoundException) {
             title = "Challenge Not Found";
             message = "Challenge (ID: " + challengeNotFoundException.getChallengeId() + ") could not be found.";
-            dialogType = JOptionPane.WARNING_MESSAGE;
+            dialogType = Alert.AlertType.WARNING;
         } else if (ex instanceof SolveStackException solveStackException) {
             title = "Application Error";
             message = solveStackException.getMessage();
-            dialogType = JOptionPane.ERROR_MESSAGE;
+            dialogType = Alert.AlertType.ERROR;
         } else {
             title = "Unexpected Error";
             message = "Something went wrong. Please restart the application.\n\nDetails: " + ex.getMessage();
-            dialogType = JOptionPane.ERROR_MESSAGE;
+            dialogType = Alert.AlertType.ERROR;
         }
 
-        JOptionPane.showMessageDialog(parent, message, title, dialogType);
+        showAlert(title, message, dialogType);
+    }
+
+    private static void showAlert(String title, String message, Alert.AlertType type) {
+        Runnable display = () -> {
+            Alert alert = new Alert(type, message, ButtonType.OK);
+            alert.setHeaderText(title);
+            alert.showAndWait();
+        };
+
+        if (Platform.isFxApplicationThread()) {
+            display.run();
+        } else {
+            Platform.runLater(display);
+        }
     }
 }

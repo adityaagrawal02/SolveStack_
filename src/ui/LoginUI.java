@@ -1,297 +1,306 @@
 package ui;
 
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.border.*;
+import javafx.animation.Animation;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
+import javafx.util.Duration;
 
-public class LoginUI extends JFrame {
+public class LoginUI {
 
-    private String selectedRole = "Company";
-    private JButton[] roleBtns;
+    private String selectedRole = "Admin";
+    private Stage stage;
 
-    public LoginUI() {
-        setTitle("SolveStack — Sign In");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(Theme.WINDOW);
-        setLocationRelativeTo(null);
-        setResizable(false);
-        setContentPane(buildContent());
+    public void show(Stage stage) {
+        this.stage = stage;
+        FxSolveStackApp.setPrimaryStage(stage);
+        stage.setTitle("SolveStack - Sign In");
+        stage.setScene(buildScene());
+        stage.show();
     }
 
-    private JPanel buildContent() {
-        JPanel root = new JPanel(new GridLayout(1, 2));
-        root.setBackground(Theme.BG_LIGHT);
-
-        JPanel hero = buildHeroPanel();
-
-        JPanel right = new JPanel(new GridBagLayout());
-        right.setBackground(Theme.BG_LIGHT);
-
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBackground(Theme.BG_WHITE);
-        card.setBorder(new CompoundBorder(
-            new CompoundBorder(
-                new MatteBorder(0, 0, 2, 0, new Color(220, 226, 235)),
-                new LineBorder(Theme.BORDER, 1, true)
-            ),
-            new EmptyBorder(32, 32, 32, 32)));
-        card.setPreferredSize(new Dimension(380, 540));
-
-        // Logo
-        JPanel logoRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        logoRow.setOpaque(false);
-        logoRow.setAlignmentX(LEFT_ALIGNMENT);
-        logoRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-        LogoPanel logo = new LogoPanel(false, 24f);
-        logoRow.add(logo);
-
-        JLabel sub = new JLabel("Open innovation collaboration platform");
-        sub.setFont(Theme.FONT_SMALL);
-        sub.setForeground(Theme.TEXT_MUTED);
-        sub.setAlignmentX(LEFT_ALIGNMENT);
-
-        // Role selection
-        JLabel roleLabel = new JLabel("Sign in as");
-        roleLabel.setFont(Theme.FONT_SMALL);
-        roleLabel.setForeground(Theme.TEXT_MUTED);
-        roleLabel.setAlignmentX(LEFT_ALIGNMENT);
-
-        String[] roles = {"Company", "Developer", "Evaluator", "Admin"};
-        roleBtns = new JButton[roles.length];
-        JPanel roleGrid = new JPanel(new GridLayout(2, 2, 8, 8));
-        roleGrid.setOpaque(false);
-        roleGrid.setAlignmentX(LEFT_ALIGNMENT);
-        roleGrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 74));
-
-        for (int i = 0; i < roles.length; i++) {
-            final String r = roles[i];
-            JButton b = new JButton(r);
-            b.setFont(Theme.FONT_SMALL);
-            b.setFocusPainted(false);
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            styleRoleBtn(b, r.equals(selectedRole));
-            b.addActionListener(e -> {
-                selectedRole = r;
-                for (int j = 0; j < roles.length; j++)
-                    styleRoleBtn(roleBtns[j], roles[j].equals(r));
-            });
-            roleBtns[i] = b;
-            roleGrid.add(b);
+    public void setVisible(boolean visible) {
+        if (!visible) {
+            dispose();
+            return;
         }
 
+        Runnable showTask = () -> {
+            Stage target = stage != null ? stage : new Stage();
+            show(target);
+        };
+
+        if (Platform.isFxApplicationThread()) {
+            showTask.run();
+        } else {
+            Platform.runLater(showTask);
+        }
+    }
+
+    public void dispose() {
+        if (stage != null) {
+            stage.close();
+        }
+    }
+
+    private Scene buildScene() {
+        HBox shell = new HBox(0);
+        shell.getStyleClass().add("auth-shell");
+        
+        StackPane visualSide = buildVisualSide();
+        VBox formSide = buildFormSide();
+        
+        HBox.setHgrow(visualSide, Priority.ALWAYS);
+        HBox.setHgrow(formSide, Priority.ALWAYS);
+        
+        visualSide.prefWidthProperty().bind(shell.widthProperty().multiply(0.5));
+        formSide.prefWidthProperty().bind(shell.widthProperty().multiply(0.5));
+
+        shell.getChildren().addAll(visualSide, formSide);
+        Scene scene = new Scene(shell, 1280, 820);
+        FxStyles.apply(scene);
+
+        return scene;
+    }
+
+    private StackPane buildVisualSide() {
+        StackPane pane = new StackPane();
+        pane.getStyleClass().add("visual-panel");
+        
+        // Background Glow
+        Circle glow = new Circle(280);
+        glow.getStyleClass().add("eclipse-background");
+        
+        // Ring
+        Circle ring = new Circle(240);
+        ring.getStyleClass().add("eclipse-ring");
+        
+        // Logo Text
+        VBox logoContent = new VBox(-5);
+        logoContent.setAlignment(Pos.CENTER);
+        
+        LogoPanel logo = new LogoPanel(false, 64);
+        logo.setAlignment(Pos.CENTER);
+        VBox.setMargin(logo, new Insets(0, 0, 20, 0));
+        
+        Label motto = new Label("Where innovation meets execution.");
+        motto.getStyleClass().add("auth-sub");
+        motto.setStyle("-fx-font-size: 18px; -fx-font-weight: 500;");
+        
+        logoContent.getChildren().addAll(logo, motto);
+        
+        pane.getChildren().addAll(glow, ring, logoContent);
+        StackPane.setAlignment(logoContent, Pos.CENTER);
+        
+        // Subtle animation
+        Timeline anim = new Timeline(
+            new KeyFrame(Duration.ZERO, new KeyValue(ring.scaleXProperty(), 1.0), new KeyValue(ring.scaleYProperty(), 1.0)),
+            new KeyFrame(Duration.millis(3000), 
+                new KeyValue(ring.scaleXProperty(), 1.02, Interpolator.EASE_BOTH), 
+                new KeyValue(ring.scaleYProperty(), 1.02, Interpolator.EASE_BOTH)
+            )
+        );
+        anim.setCycleCount(Animation.INDEFINITE);
+        anim.setAutoReverse(true);
+        anim.play();
+
+        return pane;
+    }
+
+    private VBox buildFormSide() {
+        VBox container = new VBox();
+        container.setAlignment(Pos.CENTER);
+        container.setPadding(new Insets(40));
+        
+        VBox card = new VBox(2);
+        card.getStyleClass().add("auth-card");
+        card.setMaxWidth(500);
+        
+        Label welcome = new Label("Welcome back");
+        welcome.getStyleClass().add("welcome-label");
+        
+        Label title = new Label("Sign in to your account");
+        title.getStyleClass().add("auth-title");
+        
+        Label sub = new Label("Enter your details to access your workspace.");
+        sub.getStyleClass().add("auth-sub");
+        VBox.setMargin(sub, new Insets(0, 0, 10, 0));
+        
+        // Role Selection
+        Label roleLabel = new Label("Sign in as");
+        roleLabel.getStyleClass().add("field-label");
+        
+        HBox roleBox = new HBox(12);
+        ToggleGroup group = new ToggleGroup();
+        String[] roles = {"Company", "Developer", "Evaluator", "Admin"};
+        for (String r : roles) {
+            ToggleButton tb = new ToggleButton(r);
+            tb.getStyleClass().add("role-chip");
+            tb.setToggleGroup(group);
+            if (r.equals(selectedRole)) tb.setSelected(true);
+            roleBox.getChildren().add(tb);
+        }
+        group.selectedToggleProperty().addListener((obs, old, nv) -> {
+            if (nv instanceof ToggleButton tb) selectedRole = tb.getText();
+        });
+        
         // Username
-        JLabel userLabel = Components.formLabel("Username");
-        userLabel.setAlignmentX(LEFT_ALIGNMENT);
-        JTextField userField = Components.textField("e.g. acme_corp");
-        userField.setAlignmentX(LEFT_ALIGNMENT);
-        userField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        Label userLabel = new Label("Username");
+        userLabel.getStyleClass().add("field-label");
+        HBox userInput = createInputField("\uD83D\uDC64", "alex_kumar");
+        TextField uField = (TextField) userInput.getChildren().get(1);
 
         // Password
-        JLabel passLabel = Components.formLabel("Password");
-        passLabel.setAlignmentX(LEFT_ALIGNMENT);
-        JPasswordField passField = Components.passwordField();
-        passField.setAlignmentX(LEFT_ALIGNMENT);
-        passField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        Label passLabel = new Label("Password");
+        passLabel.getStyleClass().add("field-label");
+        HBox passInput = createPassField("\uD83D\uDD12", "••••••••••••");
+        PasswordField pField = (PasswordField) passInput.getChildren().get(1);
+        
+        // Controls Row
+        HBox controls = new HBox(0);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        CheckBox remember = new CheckBox("Remember me");
+        remember.getStyleClass().add("remember-me");
+        remember.setSelected(true);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button forgot = new Button("Forgot password?");
+        forgot.getStyleClass().add("link-btn");
+        controls.getChildren().addAll(remember, spacer, forgot);
+        VBox.setMargin(controls, new Insets(16, 0, 24, 0));
 
-        // Error message label
-        JLabel errorMsg = new JLabel();
-        errorMsg.setFont(Theme.FONT_SMALL);
-        errorMsg.setForeground(new Color(211, 47, 47));
-        errorMsg.setAlignmentX(LEFT_ALIGNMENT);
+        Label errorMsg = new Label();
+        errorMsg.getStyleClass().add("error-text");
         errorMsg.setVisible(false);
+        errorMsg.setManaged(false);
 
-        // Sign in button
-        JButton signIn = Components.primaryBtn("Sign in");
-        signIn.setAlignmentX(LEFT_ALIGNMENT);
-        signIn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        signIn.addActionListener(e -> openDashboard(userField, passField, errorMsg));
+        Button signIn = new Button("Sign in");
+        signIn.getStyleClass().add("primary-btn");
+        signIn.setMaxWidth(Double.MAX_VALUE);
+        signIn.setOnAction(e -> authenticate(uField, pField, errorMsg));
+        
+        HBox footer = new HBox(6);
+        footer.setAlignment(Pos.CENTER);
+        footer.setPadding(new Insets(16, 0, 0, 0));
+        Label noAcc = new Label("New here?");
+        noAcc.getStyleClass().add("auth-sub");
+        Button create = new Button("Create account");
+        create.getStyleClass().add("link-btn");
+        create.setOnAction(e -> new SignupUI().show(stage));
+        footer.getChildren().addAll(noAcc, create);
+        
+        // Demo
+        VBox demoBox = new VBox(8);
+        demoBox.getStyleClass().add("demo-divider");
+        demoBox.setAlignment(Pos.CENTER);
+        Label demoText = new Label("Demo: alex_kumar / password123");
+        demoText.getStyleClass().add("demo-text");
+        demoBox.getChildren().add(demoText);
+        VBox.setMargin(demoBox, new Insets(32, 0, 0, 0));
 
-        // Sign up link
-        JPanel signupPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        signupPanel.setOpaque(false);
-        signupPanel.setAlignmentX(LEFT_ALIGNMENT);
-        JLabel noAccount = new JLabel("Don't have an account? ");
-        noAccount.setFont(Theme.FONT_SMALL);
-        noAccount.setForeground(Theme.TEXT_MUTED);
-        JButton signupLink = new JButton("Create one");
-        signupLink.setFont(Theme.FONT_SMALL);
-        signupLink.setForeground(Theme.PRIMARY);
-        signupLink.setBorderPainted(false);
-        signupLink.setContentAreaFilled(false);
-        signupLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        signupLink.addActionListener(e -> {
-            new SignupUI().setVisible(true);
-            this.dispose();
-        });
-        signupPanel.add(noAccount);
-        signupPanel.add(signupLink);
-
-        // Hint
-        JLabel hint = Components.notifBanner("Use demo credentials: alex_kumar / password123 (Developer), acme_corp / company123 (Company), admin_user / admin999 (Admin)");
-        hint.setAlignmentX(LEFT_ALIGNMENT);
-
-        card.add(logoRow);
-        card.add(Box.createVerticalStrut(6));
-        card.add(sub);
-        card.add(Box.createVerticalStrut(22));
-        card.add(roleLabel);
-        card.add(Box.createVerticalStrut(6));
-        card.add(roleGrid);
-        card.add(Box.createVerticalStrut(16));
-        card.add(userLabel);
-        card.add(Box.createVerticalStrut(4));
-        card.add(userField);
-        card.add(Box.createVerticalStrut(12));
-        card.add(passLabel);
-        card.add(Box.createVerticalStrut(4));
-        card.add(passField);
-        card.add(Box.createVerticalStrut(12));
-        card.add(errorMsg);
-        card.add(Box.createVerticalStrut(8));
-        card.add(signIn);
-        card.add(Box.createVerticalStrut(8));
-        card.add(signupPanel);
-        card.add(Box.createVerticalStrut(14));
-        card.add(hint);
-
-        right.add(card);
-        root.add(hero);
-        root.add(right);
-        return root;
+        card.getChildren().addAll(
+            welcome, title, sub, 
+            roleLabel, roleBox,
+            userLabel, userInput,
+            passLabel, passInput,
+            controls, errorMsg,
+            signIn, footer, demoBox
+        );
+        
+        container.getChildren().add(card);
+        return container;
     }
 
-    private JPanel buildHeroPanel() {
-        JPanel hero = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                GradientPaint gp = new GradientPaint(
-                    0, 0, new Color(11, 28, 58),
-                    getWidth(), getHeight(), Theme.PRIMARY_DARK
-                );
-                g2.setPaint(gp);
-                g2.fillRect(0, 0, getWidth(), getHeight());
-
-                g2.setColor(new Color(255, 255, 255, 36));
-                g2.fill(new java.awt.geom.Ellipse2D.Double(-110, -120, 420, 420));
-                g2.fill(new java.awt.geom.Ellipse2D.Double(getWidth() - 230, getHeight() - 220, 320, 320));
-
-                g2.setColor(new Color(255, 255, 255, 18));
-                g2.fillRoundRect(72, getHeight() - 190, getWidth() - 170, 94, 26, 26);
-                g2.dispose();
-            }
-        };
-        hero.setLayout(new BoxLayout(hero, BoxLayout.Y_AXIS));
-        hero.setBorder(new EmptyBorder(84, 64, 84, 64));
-
-        JLabel title = new JLabel("Build solutions that matter.");
-        title.setFont(Theme.FONT_TITLE.deriveFont(36f));
-        title.setForeground(Color.WHITE);
-        title.setAlignmentX(LEFT_ALIGNMENT);
-
-        JLabel subtitle = new JLabel("<html>SolveStack connects companies and developers for real-world innovation challenges.</html>");
-        subtitle.setFont(Theme.FONT_BODY.deriveFont(15f));
-        subtitle.setForeground(new Color(235, 250, 248));
-        subtitle.setAlignmentX(LEFT_ALIGNMENT);
-
-        JPanel stats = new JPanel(new GridLayout(1, 3, 10, 0));
-        stats.setOpaque(false);
-        stats.setAlignmentX(LEFT_ALIGNMENT);
-        stats.setMaximumSize(new Dimension(Integer.MAX_VALUE, 74));
-        stats.add(heroMetric("120+", "Challenges"));
-        stats.add(heroMetric("3.2k", "Developers"));
-        stats.add(heroMetric("92%", "Resolution"));
-
-        hero.add(title);
-        hero.add(Box.createVerticalStrut(12));
-        hero.add(subtitle);
-        hero.add(Box.createVerticalStrut(34));
-        hero.add(stats);
-        hero.add(Box.createVerticalGlue());
-        return hero;
+    private HBox createInputField(String iconChar, String prompt) {
+        HBox box = new HBox(0);
+        box.getStyleClass().add("input-field-container");
+        box.setAlignment(Pos.CENTER_LEFT);
+        
+        Label icon = new Label(iconChar);
+        icon.getStyleClass().add("auth-sub");
+        icon.setPadding(new Insets(0, 0, 0, 12));
+        
+        TextField field = new TextField();
+        field.setPromptText(prompt);
+        field.getStyleClass().add("text-input");
+        HBox.setHgrow(field, Priority.ALWAYS);
+        
+        box.getChildren().addAll(icon, field);
+        return box;
     }
 
-    private JPanel heroMetric(String value, String label) {
-        JPanel p = new JPanel();
-        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-        p.setOpaque(false);
-        p.setBorder(new CompoundBorder(
-                new LineBorder(new Color(255, 255, 255, 70), 1, true),
-                new EmptyBorder(10, 12, 10, 12)
-        ));
-
-        JLabel v = new JLabel(value);
-        v.setFont(Theme.FONT_HEAD.deriveFont(22f));
-        v.setForeground(Color.WHITE);
-        JLabel l = new JLabel(label);
-        l.setFont(Theme.FONT_SMALL);
-        l.setForeground(new Color(235, 250, 248));
-
-        p.add(v);
-        p.add(Box.createVerticalStrut(2));
-        p.add(l);
-        return p;
+    private HBox createPassField(String iconChar, String prompt) {
+        HBox box = new HBox(0);
+        box.getStyleClass().add("input-field-container");
+        box.setAlignment(Pos.CENTER_LEFT);
+        
+        Label icon = new Label(iconChar);
+        icon.getStyleClass().add("auth-sub");
+        icon.setPadding(new Insets(0, 0, 0, 12));
+        
+        PasswordField field = new PasswordField();
+        field.setPromptText(prompt);
+        field.getStyleClass().add("password-input");
+        HBox.setHgrow(field, Priority.ALWAYS);
+        
+        Label eye = new Label("\uD83D\uDC41"); // Eye icon
+        eye.getStyleClass().add("ghost-btn");
+        eye.setPadding(new Insets(0, 12, 0, 0));
+        
+        box.getChildren().addAll(icon, field, eye);
+        return box;
     }
 
-    private void styleRoleBtn(JButton b, boolean selected) {
-        if (selected) {
-            b.setBackground(Theme.PRIMARY_LIGHT);
-            b.setForeground(Theme.PRIMARY);
-            b.setBorder(new CompoundBorder(
-                    new LineBorder(Theme.PRIMARY, 1, true),
-                    new EmptyBorder(6, 10, 6, 10)));
-        } else {
-            b.setBackground(Theme.BG_WHITE);
-            b.setForeground(Theme.TEXT_MUTED);
-            b.setBorder(new CompoundBorder(
-                    new LineBorder(Theme.BORDER, 1, true),
-                    new EmptyBorder(6, 10, 6, 10)));
-        }
-        b.setContentAreaFilled(false);
-        b.setOpaque(true);
-    }
+    private void authenticate(TextField userField, PasswordField passField, Label errorMsg) {
+        String u = userField.getText() == null ? "" : userField.getText().trim();
+        String p = passField.getText() == null ? "" : passField.getText();
 
-    private void openDashboard(JTextField userField, JPasswordField passField, JLabel errorMsg) {
-        String username = userField.getText().trim();
-        String password = new String(passField.getPassword());
-
-        if (username.isBlank() || password.isBlank()) {
-            errorMsg.setText("⚠ Please enter username and password");
-            errorMsg.setVisible(true);
+        if (u.isBlank() || p.isBlank()) {
+            showError(errorMsg, "All fields required.");
             return;
         }
 
-        // Authenticate user
-        UserRepository repo = UserRepository.getInstance();
-        models.User user = repo.authenticate(username, password);
-
+        models.User user = UserRepository.getInstance().authenticate(u, p);
         if (user == null) {
-            errorMsg.setText("⚠ Invalid username or password");
-            errorMsg.setVisible(true);
-            passField.setText("");
+            showError(errorMsg, "Invalid credentials.");
             return;
         }
 
-        // Store user session
         String userRole = DashboardRouter.normalizeRole(user.getRole());
-        String selectedNormalizedRole = DashboardRouter.normalizeRole(selectedRole);
-        if (!selectedNormalizedRole.equalsIgnoreCase(userRole)) {
-            errorMsg.setText("⚠ This account belongs to " + userRole + ". Please select the correct role.");
-            errorMsg.setVisible(true);
+        String selRole = DashboardRouter.normalizeRole(selectedRole);
+        if (!selRole.equalsIgnoreCase(userRole)) {
+            showError(errorMsg, "Role mismatch (Account: " + userRole + ")");
             return;
         }
 
         UserSession.getInstance().setCurrentUser(user, userRole);
-
-        // Route to dedicated dashboard per role.
-        try {
-            DashboardRouter.openDashboard(this, userRole);
-        } catch (IllegalArgumentException ex) {
-            errorMsg.setText("⚠ " + ex.getMessage());
-            errorMsg.setVisible(true);
-        }
+        DashboardRouter.openDashboard(stage, userRole);
+    }
+    
+    private void showError(Label errorMsg, String msg) {
+        errorMsg.setText(msg);
+        errorMsg.setVisible(true);
+        errorMsg.setManaged(true);
     }
 }

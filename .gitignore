@@ -1,0 +1,7 @@
+out_run/
+target/
+*.class
+.settings/
+.project
+.classpath
+bin/

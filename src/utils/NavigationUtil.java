@@ -1,12 +1,16 @@
 package utils;
 
-import java.awt.*;
-import javax.swing.*;
+import ui.LoginUI;
 import ui.AdminDashboardUI;
 import ui.CompanyDashboardUI;
 import ui.DeveloperDashboardUI;
 import ui.EvaluatorDashboardUI;
-import ui.LoginUI;
+
+import exceptions.UnauthorizedAccessException;
+import exceptions.GlobalExceptionHandler;
+
+import javax.swing.*;
+import java.awt.*;
 
 public final class NavigationUtil {
 
@@ -21,31 +25,30 @@ public final class NavigationUtil {
 
     public static void routeToDashboard(JFrame currentFrame, String role) {
         SwingUtilities.invokeLater(() -> {
+            try {
+                closeWindow(currentFrame);
 
-            closeWindow(currentFrame);
+                switch (role.toUpperCase()) {
+                    case Constants.ROLE_ADMIN ->
+                            new AdminDashboardUI().setVisible(true);
 
-            switch (role.toUpperCase()) {
-                case Constants.ROLE_ADMIN ->
-                        new AdminDashboardUI().setVisible(true);
+                    case Constants.ROLE_COMPANY ->
+                            new CompanyDashboardUI().setVisible(true);
 
-                case Constants.ROLE_COMPANY ->
-                        new CompanyDashboardUI().setVisible(true);
+                    case Constants.ROLE_DEVELOPER ->
+                            new DeveloperDashboardUI().setVisible(true);
 
-                case Constants.ROLE_DEVELOPER ->
-                        new DeveloperDashboardUI().setVisible(true);
+                    case Constants.ROLE_EVALUATOR ->
+                            new EvaluatorDashboardUI().setVisible(true);
 
-                case Constants.ROLE_EVALUATOR ->
-                        new EvaluatorDashboardUI().setVisible(true);
-
-                default -> {
-                    JOptionPane.showMessageDialog(
-                            currentFrame,
-                            "Unknown role: " + role,
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                    default -> throw new UnauthorizedAccessException(
+                            role, "access any dashboard (unknown role: " + role + ")"
                     );
-                    new LoginUI().setVisible(true);
                 }
+
+            } catch (UnauthorizedAccessException e) {
+                GlobalExceptionHandler.handleUnauthorized(e, currentFrame);
+                new LoginUI().setVisible(true);
             }
         });
     }
@@ -66,7 +69,7 @@ public final class NavigationUtil {
             );
 
             if (choice == JOptionPane.YES_OPTION) {
-                // Clear session
+                // Clear session (correct method)
                 ui.UserSession.getInstance().logout();
 
                 closeWindow(currentFrame);
