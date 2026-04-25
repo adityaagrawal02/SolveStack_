@@ -1,92 +1,98 @@
 package ui;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
+import java.util.List;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
-public class SubmissionsUI extends JFrame {
+public class SubmissionsUI extends FxModalWindow {
 
-    public SubmissionsUI(JFrame parent, String challengeName) {
-        setTitle("SolveStack — Submissions");
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setSize(Theme.WINDOW);
-        setLocationRelativeTo(parent);
+    private final String challengeName;
 
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(Theme.BG_LIGHT);
-
-        JPanel nav = new JPanel(new BorderLayout());
-        nav.setBackground(Theme.BG_WHITE);
-        nav.setBorder(new CompoundBorder(new MatteBorder(0,0,1,0,Theme.BORDER), new EmptyBorder(10,16,10,16)));
-        JLabel brandLbl = new JLabel("SolveStack — Submissions");
-        brandLbl.setFont(Theme.FONT_HEAD); brandLbl.setForeground(Theme.TEXT_PRIMARY);
-        JButton back = Components.smallBtn("← Back");
-        back.addActionListener(e -> dispose());
-        nav.add(brandLbl, BorderLayout.WEST);
-        nav.add(back, BorderLayout.EAST);
-
-        root.add(nav, BorderLayout.NORTH);
-        root.add(buildBody(challengeName), BorderLayout.CENTER);
-        setContentPane(root);
+    public SubmissionsUI(Object parent, String challengeName) {
+        super("SolveStack - Submissions", 1120, 760, parent);
+        this.challengeName = challengeName == null || challengeName.isBlank() ? "Challenge" : challengeName;
     }
 
-    private JScrollPane buildBody(String challengeName) {
-        JPanel body = new JPanel();
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBackground(Theme.BG_LIGHT);
-        body.setBorder(new EmptyBorder(20, 20, 20, 20));
+    @Override
+    protected Parent buildContent() {
+        BorderPane root = new BorderPane();
+        root.getStyleClass().addAll("modal-root", "app-root");
+        root.setTop(topBar());
 
-        JLabel title = new JLabel("Submissions");
-        title.setFont(Theme.FONT_TITLE); title.setForeground(Theme.TEXT_PRIMARY);
-        title.setAlignmentX(LEFT_ALIGNMENT);
-        JLabel sub = new JLabel(challengeName + " · 9 submissions");
-        sub.setFont(Theme.FONT_SMALL); sub.setForeground(Theme.TEXT_MUTED);
-        sub.setAlignmentX(LEFT_ALIGNMENT);
+        VBox content = new VBox(14);
+        content.setPadding(new Insets(24));
 
-        JPanel card = Components.card();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setAlignmentX(LEFT_ALIGNMENT);
+        Label title = new Label("Submissions");
+        title.getStyleClass().add("page-title");
 
-        Object[][] rows = {
-            {"RK", "Rahul K.",      "Graph neural network optimizer", "Python, PyTorch, FastAPI",   "Under review", Theme.AMBER_BG, Theme.AMBER_TEXT},
-            {"PM", "Priya M.",      "Reinforcement learning approach","Python, TensorFlow, Docker", "Accepted",     Theme.TEAL_BG,  Theme.TEAL_TEXT},
-            {"SA", "Siddharth A.", "Genetic algorithm solver",       "Java, Spring Boot",          "Under review", Theme.AMBER_BG, Theme.AMBER_TEXT},
-            {"VR", "Vishal R.",    "MILP optimization model",        "Python, PuLP, Flask",        "Pending",      Theme.GREEN_BG, Theme.GREEN_TEXT},
-        };
+        Label subtitle = new Label(challengeName + "   Review participants and progress states.");
+        subtitle.getStyleClass().add("muted");
 
-        for (int i = 0; i < rows.length; i++) {
-            Object[] r = rows[i];
-            card.add(subRow((String)r[0], (String)r[1], (String)r[2], (String)r[3], (String)r[4], (Color)r[5], (Color)r[6]));
-            if (i < rows.length - 1) card.add(Components.sep());
+        VBox list = new VBox(10);
+        for (SubmissionRow row : rows()) {
+            list.getChildren().add(submissionCard(row));
         }
 
-        body.add(title);
-        body.add(Box.createVerticalStrut(4));
-        body.add(sub);
-        body.add(Box.createVerticalStrut(16));
-        body.add(card);
-        body.add(Box.createVerticalGlue());
-        return Components.scroll(body);
+        content.getChildren().addAll(title, subtitle, list);
+
+        ScrollPane scroller = new ScrollPane(content);
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("page-scroll");
+
+        root.setCenter(scroller);
+        return root;
     }
 
-    private JPanel subRow(String initials, String name, String solution, String tech, String status, Color sbg, Color sfg) {
-        JPanel row = new JPanel(new BorderLayout(10, 0));
-        row.setOpaque(false);
-        row.setBorder(new EmptyBorder(12, 0, 12, 0));
+    private VBox submissionCard(SubmissionRow row) {
+        Label person = new Label(row.author() + "   " + row.solution());
+        person.getStyleClass().add("table-title");
 
-        row.add(Components.avatar(initials, new Color(206, 203, 246), new Color(60, 52, 137)), BorderLayout.WEST);
+        Label stack = new Label(row.stack());
+        stack.getStyleClass().add("muted");
 
-        JPanel info = new JPanel();
-        info.setOpaque(false);
-        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
-        JLabel n = new JLabel(name + " — " + solution);
-        n.setFont(Theme.FONT_BODY); n.setForeground(Theme.TEXT_PRIMARY);
-        JLabel t = new JLabel(tech);
-        t.setFont(Theme.FONT_SMALL); t.setForeground(Theme.TEXT_MUTED);
-        info.add(n); info.add(t);
+        Label status = new Label(row.status());
+        status.getStyleClass().addAll("status-pill", row.statusClass());
 
-        row.add(info, BorderLayout.CENTER);
-        row.add(Components.badge(status, sbg, sfg), BorderLayout.EAST);
-        return row;
+        HBox footer = new HBox(status);
+        footer.setAlignment(Pos.CENTER_LEFT);
+
+        return FxComponents.card(person, stack, footer);
+    }
+
+    private HBox topBar() {
+        Label title = new Label("Submission Review");
+        title.getStyleClass().add("section-title");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button close = FxComponents.smallBtn("Close", this::dispose);
+
+        HBox top = new HBox(12, new LogoPanel(true), title, spacer, close);
+        top.setAlignment(Pos.CENTER_LEFT);
+        top.getStyleClass().add("top-nav");
+        return top;
+    }
+
+    private List<SubmissionRow> rows() {
+        return List.of(
+                new SubmissionRow("Rahul K.", "Graph Neural Network Optimizer", "Python, PyTorch, FastAPI", "Under Review", "chip-warning"),
+                new SubmissionRow("Priya M.", "Reinforcement Learning Planner", "TensorFlow, Docker", "Accepted", "chip-success"),
+                new SubmissionRow("Siddharth A.", "Genetic Algorithm Solver", "Java, Spring Boot", "Under Review", "chip-warning"),
+                new SubmissionRow("Vishal R.", "MILP Optimization Model", "Python, PuLP, Flask", "Pending", "chip-info")
+        );
+    }
+
+    private record SubmissionRow(String author, String solution, String stack, String status, String statusClass) {
     }
 }
+

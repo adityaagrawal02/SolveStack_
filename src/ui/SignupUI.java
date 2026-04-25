@@ -1,310 +1,283 @@
 package ui;
 
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.border.*;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
 
-public class SignupUI extends JFrame {
+public class SignupUI {
 
     private String selectedRole = "Developer";
-    private JButton[] roleBtns;
-    private JPanel dynamicFieldsPanel;
+    private Stage stage;
 
-    public SignupUI() {
-        setTitle("SolveStack — Create Account");
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setSize(new Dimension(450, 700));
-        setLocationRelativeTo(null);
-        setResizable(false);
-        setContentPane(buildContent());
+    private Label dynamicFieldLabel1;
+    private Label dynamicFieldLabel2;
+    private TextField dynamicValue1Field;
+    private TextField dynamicValue2Field;
+
+    public void show(Stage stage) {
+        this.stage = stage;
+        FxSolveStackApp.setPrimaryStage(stage);
+        stage.setTitle("SolveStack - Create Account");
+        stage.setScene(buildScene());
+        stage.show();
     }
 
-    private JPanel buildContent() {
-        JPanel root = new JPanel();
-        root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
-        root.setBackground(Theme.BG_LIGHT);
-        root.setBorder(new EmptyBorder(30, 30, 30, 30));
-
-        // Logo
-        JPanel logoRow = new JPanel();
-        logoRow.setLayout(new BoxLayout(logoRow, BoxLayout.Y_AXIS));
-        logoRow.setOpaque(false);
-        logoRow.setAlignmentX(LEFT_ALIGNMENT);
-        logoRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-        LogoPanel logo = new LogoPanel(false, 24f);
-        logoRow.add(logo);
-        JLabel tagline = new JLabel("  Open Innovation Collaboration Platform");
-        tagline.setFont(Theme.FONT_SMALL);
-        tagline.setForeground(Theme.TEXT_MUTED);
-        tagline.setAlignmentX(LEFT_ALIGNMENT);
-        logoRow.add(tagline);
-
-        JLabel title = new JLabel("Create Account");
-        title.setFont(Theme.FONT_HEAD.deriveFont(22f));
-        title.setForeground(Theme.TEXT_PRIMARY);
-        title.setAlignmentX(LEFT_ALIGNMENT);
-
-        JLabel sub = new JLabel("Join SolveStack and start collaborating");
-        sub.setFont(Theme.FONT_SMALL);
-        sub.setForeground(Theme.TEXT_MUTED);
-        sub.setAlignmentX(LEFT_ALIGNMENT);
-
-        // Role selection
-        JLabel roleLabel = new JLabel("Select your role");
-        roleLabel.setFont(Theme.FONT_SMALL);
-        roleLabel.setForeground(Theme.TEXT_MUTED);
-        roleLabel.setAlignmentX(LEFT_ALIGNMENT);
-
-        String[] roles = {"Developer", "Company", "Evaluator", "Admin"};
-        roleBtns = new JButton[roles.length];
-        JPanel roleGrid = new JPanel(new GridLayout(2, 2, 8, 8));
-        roleGrid.setOpaque(false);
-        roleGrid.setAlignmentX(LEFT_ALIGNMENT);
-        roleGrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 78));
-
-        for (int i = 0; i < roles.length; i++) {
-            final String r = roles[i];
-            JButton b = new JButton(r);
-            b.setFont(Theme.FONT_SMALL);
-            b.setFocusPainted(false);
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            styleRoleBtn(b, r.equals(selectedRole));
-            b.addActionListener(e -> {
-                selectedRole = r;
-                for (int j = 0; j < roles.length; j++)
-                    styleRoleBtn(roleBtns[j], roles[j].equals(r));
-                updateDynamicFields();
-            });
-            roleBtns[i] = b;
-            roleGrid.add(b);
+    public void setVisible(boolean visible) {
+        if (!visible) {
+            dispose();
+            return;
         }
 
-        // Common fields
-        JLabel userLabel = Components.formLabel("Username");
-        userLabel.setAlignmentX(LEFT_ALIGNMENT);
-        JTextField userField = Components.textField("e.g. john_dev");
-        userField.setAlignmentX(LEFT_ALIGNMENT);
-        userField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        Runnable showTask = () -> {
+            Stage target = stage != null ? stage : new Stage();
+            show(target);
+        };
 
-        JLabel emailLabel = Components.formLabel("Email");
-        emailLabel.setAlignmentX(LEFT_ALIGNMENT);
-        JTextField emailField = Components.textField("e.g. john@example.com");
-        emailField.setAlignmentX(LEFT_ALIGNMENT);
-        emailField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        if (Platform.isFxApplicationThread()) {
+            showTask.run();
+        } else {
+            Platform.runLater(showTask);
+        }
+    }
 
-        JLabel passLabel = Components.formLabel("Password");
-        passLabel.setAlignmentX(LEFT_ALIGNMENT);
-        JPasswordField passField = Components.passwordField();
-        passField.setAlignmentX(LEFT_ALIGNMENT);
-        passField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+    public void dispose() {
+        if (stage != null) {
+            stage.close();
+        }
+    }
 
-        // Dynamic fields panel (changes based on role)
-        dynamicFieldsPanel = new JPanel();
-        dynamicFieldsPanel.setLayout(new BoxLayout(dynamicFieldsPanel, BoxLayout.Y_AXIS));
-        dynamicFieldsPanel.setOpaque(false);
-        updateDynamicFields();
+    private Scene buildScene() {
+        HBox shell = new HBox(0);
+        shell.getStyleClass().add("auth-shell");
+        
+        StackPane visualSide = buildVisualSide();
+        VBox formSide = buildFormSide();
+        
+        HBox.setHgrow(visualSide, Priority.ALWAYS);
+        HBox.setHgrow(formSide, Priority.ALWAYS);
+        
+        visualSide.prefWidthProperty().bind(shell.widthProperty().multiply(0.4));
+        formSide.prefWidthProperty().bind(shell.widthProperty().multiply(0.6));
 
-        // Error message
-        JLabel errorMsg = new JLabel();
-        errorMsg.setFont(Theme.FONT_SMALL);
-        errorMsg.setForeground(new Color(211, 47, 47));
-        errorMsg.setAlignmentX(LEFT_ALIGNMENT);
-        errorMsg.setVisible(false);
+        shell.getChildren().addAll(visualSide, formSide);
+        Scene scene = new Scene(shell, 1280, 820);
+        FxStyles.apply(scene);
 
-        // Sign up button
-        JButton signUp = Components.primaryBtn("Create Account");
-        signUp.setAlignmentX(LEFT_ALIGNMENT);
-        signUp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        signUp.addActionListener(e -> registerUser(userField, emailField, passField, dynamicFieldsPanel, errorMsg));
+        return scene;
+    }
 
-        // Back to login
-        JButton backBtn = Components.outlineBtn("Back to Login");
-        backBtn.setAlignmentX(LEFT_ALIGNMENT);
-        backBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        backBtn.addActionListener(e -> {
-            new LoginUI().setVisible(true);
-            this.dispose();
+    private StackPane buildVisualSide() {
+        StackPane pane = new StackPane();
+        pane.getStyleClass().add("visual-panel");
+        
+        Circle glow = new Circle(200);
+        glow.getStyleClass().add("eclipse-background");
+        
+        Circle ring = new Circle(170);
+        ring.getStyleClass().add("eclipse-ring");
+        
+        VBox logoContent = new VBox(-3);
+        logoContent.setAlignment(Pos.CENTER);
+        LogoPanel logo = new LogoPanel(false, 48); // Increased from 40
+        logo.setAlignment(Pos.CENTER);
+        VBox.setMargin(logo, new Insets(0, 0, 15, 0));
+        
+        Label sub = new Label("Solve challenges together.");
+        sub.getStyleClass().add("auth-sub");
+        logoContent.getChildren().addAll(logo, sub);
+        
+        pane.getChildren().addAll(glow, ring, logoContent);
+        pane.setClip(new javafx.scene.shape.Rectangle(1280, 1080));
+        return pane;
+    }
+
+    private VBox buildFormSide() {
+        VBox container = new VBox();
+        container.setAlignment(Pos.CENTER);
+        container.setPadding(new Insets(40));
+        
+        VBox card = new VBox(2);
+        card.getStyleClass().add("auth-card");
+        card.setMaxWidth(520);
+        
+        Label welcome = new Label("Get started");
+        welcome.getStyleClass().add("welcome-label");
+        Label title = new Label("Create your account");
+        title.getStyleClass().add("auth-title");
+        Label sub = new Label("Join the largest open innovation hub.");
+        sub.getStyleClass().add("auth-sub");
+        VBox.setMargin(sub, new Insets(0, 0, 10, 0));
+
+        Label roleLabel = new Label("Register as");
+        roleLabel.getStyleClass().add("field-label");
+        HBox roleBox = new HBox(10);
+        ToggleGroup group = new ToggleGroup();
+        String[] roles = {"Developer", "Company", "Evaluator"};
+        for (String r : roles) {
+            ToggleButton tb = new ToggleButton(r);
+            tb.getStyleClass().add("role-chip");
+            tb.setToggleGroup(group);
+            if (r.equals(selectedRole)) tb.setSelected(true);
+            roleBox.getChildren().add(tb);
+        }
+        group.selectedToggleProperty().addListener((obs, old, nv) -> {
+            if (nv instanceof ToggleButton tb) {
+                selectedRole = tb.getText();
+                refreshDynamicLabels();
+            }
         });
 
-        root.add(logoRow);
-        root.add(Box.createVerticalStrut(4));
-        root.add(title);
-        root.add(Box.createVerticalStrut(4));
-        root.add(sub);
-        root.add(Box.createVerticalStrut(20));
-        root.add(roleLabel);
-        root.add(Box.createVerticalStrut(6));
-        root.add(roleGrid);
-        root.add(Box.createVerticalStrut(16));
-        root.add(userLabel);
-        root.add(Box.createVerticalStrut(4));
-        root.add(userField);
-        root.add(Box.createVerticalStrut(10));
-        root.add(emailLabel);
-        root.add(Box.createVerticalStrut(4));
-        root.add(emailField);
-        root.add(Box.createVerticalStrut(10));
-        root.add(dynamicFieldsPanel);
-        root.add(Box.createVerticalStrut(10));
-        root.add(passLabel);
-        root.add(Box.createVerticalStrut(4));
-        root.add(passField);
-        root.add(Box.createVerticalStrut(12));
-        root.add(errorMsg);
-        root.add(Box.createVerticalStrut(12));
-        root.add(signUp);
-        root.add(Box.createVerticalStrut(8));
-        root.add(backBtn);
-        root.add(Box.createVerticalGlue());
-
-        JPanel wrapper = new JPanel();
-        wrapper.setBackground(Theme.BG_LIGHT);
-        wrapper.add(root);
-        return wrapper;
-    }
-
-    private void updateDynamicFields() {
-        dynamicFieldsPanel.removeAll();
-        dynamicFieldsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-
-        if ("Developer".equals(selectedRole)) {
-            JLabel skillLabel = Components.formLabel("Skills (comma-separated)");
-            skillLabel.setAlignmentX(LEFT_ALIGNMENT);
-            JTextField skillField = Components.textField("e.g. Java, Python, ML");
-            skillField.setAlignmentX(LEFT_ALIGNMENT);
-            skillField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-            skillField.setName("skillSet");
-            dynamicFieldsPanel.add(skillLabel);
-            dynamicFieldsPanel.add(Box.createVerticalStrut(4));
-            dynamicFieldsPanel.add(skillField);
-        } else if ("Company".equals(selectedRole)) {
-            JLabel companyLabel = Components.formLabel("Company Name");
-            companyLabel.setAlignmentX(LEFT_ALIGNMENT);
-            JTextField companyField = Components.textField("e.g. Acme Corp");
-            companyField.setAlignmentX(LEFT_ALIGNMENT);
-            companyField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-            companyField.setName("companyName");
-
-            JLabel industryLabel = Components.formLabel("Industry");
-            industryLabel.setAlignmentX(LEFT_ALIGNMENT);
-            JTextField industryField = Components.textField("e.g. FinTech");
-            industryField.setAlignmentX(LEFT_ALIGNMENT);
-            industryField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-            industryField.setName("industry");
-
-            dynamicFieldsPanel.add(companyLabel);
-            dynamicFieldsPanel.add(Box.createVerticalStrut(4));
-            dynamicFieldsPanel.add(companyField);
-            dynamicFieldsPanel.add(Box.createVerticalStrut(10));
-            dynamicFieldsPanel.add(industryLabel);
-            dynamicFieldsPanel.add(Box.createVerticalStrut(4));
-            dynamicFieldsPanel.add(industryField);
-        } else if ("Evaluator".equals(selectedRole)) {
-            JLabel expertiseLabel = Components.formLabel("Area of Expertise");
-            expertiseLabel.setAlignmentX(LEFT_ALIGNMENT);
-            JTextField expertiseField = Components.textField("e.g. AI/ML, Cloud Architecture");
-            expertiseField.setAlignmentX(LEFT_ALIGNMENT);
-            expertiseField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-            expertiseField.setName("expertise");
-            dynamicFieldsPanel.add(expertiseLabel);
-            dynamicFieldsPanel.add(Box.createVerticalStrut(4));
-            dynamicFieldsPanel.add(expertiseField);
-        } else if ("Admin".equals(selectedRole)) {
-            JLabel levelLabel = Components.formLabel("Admin Access Level");
-            levelLabel.setAlignmentX(LEFT_ALIGNMENT);
-            JTextField levelField = Components.textField("e.g. SUPER_ADMIN");
-            levelField.setAlignmentX(LEFT_ALIGNMENT);
-            levelField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-            levelField.setName("adminLevel");
-            dynamicFieldsPanel.add(levelLabel);
-            dynamicFieldsPanel.add(Box.createVerticalStrut(4));
-            dynamicFieldsPanel.add(levelField);
-        }
-        dynamicFieldsPanel.revalidate();
-        dynamicFieldsPanel.repaint();
-    }
-
-    private void registerUser(JTextField userField, JTextField emailField, JPasswordField passField, JPanel fieldsPanel, JLabel errorMsg) {
-        String username = userField.getText().trim();
-        String email = emailField.getText().trim();
-        String password = new String(passField.getPassword());
-
-        if (username.isBlank() || email.isBlank() || password.isBlank()) {
-            errorMsg.setText("⚠ Please fill in all fields");
-            errorMsg.setVisible(true);
-            return;
-        }
-
-        if (!email.contains("@")) {
-            errorMsg.setText("⚠ Please enter a valid email");
-            errorMsg.setVisible(true);
-            return;
-        }
-
-        // Get dynamic field values
-        String dynamicValue1 = "";
-        String dynamicValue2 = "";
-        int fieldCount = 0;
+        VBox userGroup = createInputWithLabel("Username", "john_dev");
+        TextField uField = (TextField) userGroup.getChildren().get(1);
         
-        for (Component c : fieldsPanel.getComponents()) {
-            if (c instanceof JTextField) {
-                String val = ((JTextField) c).getText().trim();
-                if (!val.isEmpty()) {
-                    if (fieldCount == 0) {
-                        dynamicValue1 = val;
-                    } else if (fieldCount == 1) {
-                        dynamicValue2 = val;
-                    }
-                    fieldCount++;
-                }
+        VBox emailGroup = createInputWithLabel("Email Address", "john@example.com");
+        TextField eField = (TextField) emailGroup.getChildren().get(1);
+
+        dynamicFieldLabel1 = new Label();
+        dynamicFieldLabel1.getStyleClass().add("field-label");
+        dynamicValue1Field = new TextField();
+        dynamicValue1Field.getStyleClass().add("text-input");
+        VBox d1 = new VBox(0, dynamicFieldLabel1, wrapInput(dynamicValue1Field));
+
+        dynamicFieldLabel2 = new Label();
+        dynamicFieldLabel2.getStyleClass().add("field-label");
+        dynamicValue2Field = new TextField();
+        dynamicValue2Field.getStyleClass().add("text-input");
+        VBox d2 = new VBox(0, dynamicFieldLabel2, wrapInput(dynamicValue2Field));
+
+        Label passLabel = new Label("Password");
+        passLabel.getStyleClass().add("field-label");
+        PasswordField pField = new PasswordField();
+        pField.getStyleClass().add("password-input");
+        pField.setPromptText("********");
+        HBox pWrap = wrapInput(pField);
+
+        refreshDynamicLabels();
+
+        Label errorMsg = new Label();
+        errorMsg.getStyleClass().add("error-text");
+        errorMsg.setVisible(false);
+        errorMsg.setManaged(false);
+
+        Button signupBtn = new Button("Register Account");
+        signupBtn.getStyleClass().add("primary-btn");
+        signupBtn.setMaxWidth(Double.MAX_VALUE);
+        signupBtn.setOnAction(e -> registerUser(uField, eField, pField, errorMsg));
+        VBox.setMargin(signupBtn, new Insets(24, 0, 0, 0));
+
+        Button back = new Button("Back to login");
+        back.getStyleClass().add("link-btn");
+        back.setAlignment(Pos.CENTER);
+        back.setMaxWidth(Double.MAX_VALUE);
+        back.setOnAction(e -> new LoginUI().show(stage));
+
+        VBox content = new VBox(0, 
+            welcome, title, sub,
+            roleLabel, roleBox,
+            userGroup, emailGroup, d1, d2, 
+            passLabel, pWrap, errorMsg, 
+            signupBtn, back
+        );
+
+        ScrollPane scroll = new ScrollPane(content);
+        scroll.setFitToWidth(true);
+        scroll.getStyleClass().add("scroll-pane");
+        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        card.getChildren().add(scroll);
+        container.getChildren().add(card);
+        return container;
+    }
+
+    private VBox createInputWithLabel(String labelText, String prompt) {
+        Label l = new Label(labelText);
+        l.getStyleClass().add("field-label");
+        TextField f = new TextField();
+        f.getStyleClass().add("text-input");
+        f.setPromptText(prompt);
+        return new VBox(0, l, wrapInput(f));
+    }
+    
+    private HBox wrapInput(Node input) {
+        HBox box = new HBox(input);
+        box.getStyleClass().add("input-field-container");
+        HBox.setHgrow(input, Priority.ALWAYS);
+        return box;
+    }
+
+    private void refreshDynamicLabels() {
+        dynamicFieldLabel2.setVisible(false);
+        dynamicFieldLabel2.setManaged(false);
+        dynamicValue1Field.getParent().setVisible(true); // Ensure container is visible
+        
+        switch (selectedRole) {
+            case "Developer" -> {
+                dynamicFieldLabel1.setText("Core Skills");
+                dynamicValue1Field.setPromptText("Java, Python, AI");
+            }
+            case "Company" -> {
+                dynamicFieldLabel1.setText("Company Name");
+                dynamicFieldLabel2.setText("Industry");
+                dynamicFieldLabel2.setVisible(true);
+                dynamicFieldLabel2.setManaged(true);
+                dynamicValue2Field.getParent().setVisible(true);
+                dynamicValue2Field.getParent().setManaged(true);
+            }
+            case "Evaluator" -> {
+                dynamicFieldLabel1.setText("Expertise");
+                dynamicValue1Field.setPromptText("Cybersecurity");
             }
         }
+    }
 
-        if (dynamicValue1.isEmpty()) {
-            errorMsg.setText("⚠ Please fill in all required fields");
-            errorMsg.setVisible(true);
+    private void registerUser(TextField u, TextField e, PasswordField p, Label err) {
+        String username = trim(u.getText());
+        String email = trim(e.getText());
+        String password = trim(p.getText());
+
+        if (username.isBlank() || email.isBlank() || password.isBlank()) {
+            err.setText("All fields required.");
+            err.setVisible(true);
+            err.setManaged(true);
             return;
         }
 
-        // Register user
-        UserRepository repo = UserRepository.getInstance();
-        boolean success;
-        
+        boolean s;
         if ("Company".equals(selectedRole)) {
-            success = repo.registerCompany(username, email, password, dynamicValue1, dynamicValue2);
+            s = UserRepository.getInstance().registerCompany(username, email, password, trim(dynamicValue1Field.getText()), trim(dynamicValue2Field.getText()));
         } else {
-            success = repo.registerUser(username, email, password, selectedRole, dynamicValue1);
+            s = UserRepository.getInstance().registerUser(username, email, password, selectedRole, trim(dynamicValue1Field.getText()));
         }
 
-        if (!success) {
-            errorMsg.setText("⚠ Username already exists. Please choose another.");
-            errorMsg.setVisible(true);
+        if (!s) {
+            err.setText("Username exists.");
+            err.setVisible(true);
+            err.setManaged(true);
             return;
         }
 
-        JOptionPane.showMessageDialog(this,
-                "Account created successfully! You can now login.",
-                "Welcome to SolveStack",
-                JOptionPane.INFORMATION_MESSAGE);
-        new LoginUI().setVisible(true);
-        this.dispose();
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setHeaderText("Account created");
+        a.showAndWait();
+        new LoginUI().show(stage);
     }
 
-    private void styleRoleBtn(JButton b, boolean selected) {
-        if (selected) {
-            b.setBackground(Theme.PRIMARY_LIGHT);
-            b.setForeground(Theme.PRIMARY);
-            b.setBorder(new CompoundBorder(
-                    new LineBorder(Theme.PRIMARY, 1, true),
-                    new EmptyBorder(6, 10, 6, 10)));
-        } else {
-            b.setBackground(Theme.BG_WHITE);
-            b.setForeground(Theme.TEXT_MUTED);
-            b.setBorder(new CompoundBorder(
-                    new LineBorder(Theme.BORDER, 1, true),
-                    new EmptyBorder(6, 10, 6, 10)));
-        }
-        b.setContentAreaFilled(false);
-        b.setOpaque(true);
-    }
+    private String trim(String v) { return v == null ? "" : v.trim(); }
 }

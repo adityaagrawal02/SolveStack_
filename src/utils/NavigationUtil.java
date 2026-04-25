@@ -1,140 +1,92 @@
 package utils;
 
-import java.awt.*;
-import javax.swing.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import ui.AdminDashboardUI;
 import ui.CompanyDashboardUI;
 import ui.DeveloperDashboardUI;
 import ui.EvaluatorDashboardUI;
 import ui.LoginUI;
+import ui.UserSession;
 
 public final class NavigationUtil {
 
-    // Prevent instantiation
     private NavigationUtil() {
         throw new UnsupportedOperationException("NavigationUtil cannot be instantiated.");
     }
 
-    // =========================================================
-    // ROLE-BASED DASHBOARD ROUTING
-    // =========================================================
-
-    public static void routeToDashboard(JFrame currentFrame, String role) {
-        SwingUtilities.invokeLater(() -> {
-
-            closeWindow(currentFrame);
-
-            switch (role.toUpperCase()) {
-                case Constants.ROLE_ADMIN ->
-                        new AdminDashboardUI().setVisible(true);
-
-                case Constants.ROLE_COMPANY ->
-                        new CompanyDashboardUI().setVisible(true);
-
-                case Constants.ROLE_DEVELOPER ->
-                        new DeveloperDashboardUI().setVisible(true);
-
-                case Constants.ROLE_EVALUATOR ->
-                        new EvaluatorDashboardUI().setVisible(true);
-
-                default -> {
-                    JOptionPane.showMessageDialog(
-                            currentFrame,
-                            "Unknown role: " + role,
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-                    new LoginUI().setVisible(true);
-                }
-            }
-        });
-    }
-
-    // =========================================================
-    // LOGOUT
-    // =========================================================
-
-    public static void logout(JFrame currentFrame) {
-        SwingUtilities.invokeLater(() -> {
-
-            int choice = JOptionPane.showConfirmDialog(
-                    currentFrame,
-                    "Are you sure you want to log out?",
-                    "Confirm Logout",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE
-            );
-
-            if (choice == JOptionPane.YES_OPTION) {
-                // Clear session
-                ui.UserSession.getInstance().logout();
-
-                closeWindow(currentFrame);
-                new LoginUI().setVisible(true);
-            }
-        });
-    }
-
-    // =========================================================
-    // WINDOW MANAGEMENT
-    // =========================================================
-
-    public static void openWindow(JFrame newFrame, JFrame parentFrame) {
-        SwingUtilities.invokeLater(() -> {
-            if (parentFrame != null) {
-                centerRelativeTo(newFrame, parentFrame);
-            }
-            newFrame.setVisible(true);
-        });
-    }
-
-    public static void navigateTo(JFrame newFrame, JFrame currentFrame) {
-        SwingUtilities.invokeLater(() -> {
-            closeWindow(currentFrame);
-            newFrame.setVisible(true);
-        });
-    }
-
-    public static void closeWindow(JFrame frame) {
-        if (frame != null) {
-            frame.dispose();
-        }
-    }
-
-    public static void centerRelativeTo(Window child, Window parent) {
-        if (parent == null) {
-            child.setLocationRelativeTo(null);
+    public static void routeToDashboard(Object currentView, String role) {
+        if (role == null) {
+            showError("Unknown role", "Role was null. Redirecting to sign in.");
+            new LoginUI().setVisible(true);
             return;
         }
-        int x = parent.getX() + (parent.getWidth() - child.getWidth()) / 2;
-        int y = parent.getY() + (parent.getHeight() - child.getHeight()) / 2;
-        child.setLocation(x, y);
+
+        switch (role.toUpperCase()) {
+            case Constants.ROLE_ADMIN -> new AdminDashboardUI().setVisible(true);
+            case Constants.ROLE_COMPANY -> new CompanyDashboardUI().setVisible(true);
+            case Constants.ROLE_DEVELOPER -> new DeveloperDashboardUI().setVisible(true);
+            case Constants.ROLE_EVALUATOR -> new EvaluatorDashboardUI().setVisible(true);
+            default -> {
+                showError("Unknown role", "Unknown role: " + role);
+                new LoginUI().setVisible(true);
+            }
+        }
     }
 
-    public static void centerOnScreen(Window frame) {
-        frame.setLocationRelativeTo(null);
+    public static void logout(Object currentView) {
+        UserSession.getInstance().logout();
+        new LoginUI().setVisible(true);
     }
 
-    // =========================================================
-    // DIALOG HELPERS
-    // =========================================================
-
-    public static void showInfo(Component parent, String message, String title) {
-        JOptionPane.showMessageDialog(parent, message, title, JOptionPane.INFORMATION_MESSAGE);
+    public static void openWindow(Object newView, Object parentView) {
+        if (newView instanceof DeveloperDashboardUI dev) {
+            dev.setVisible(true);
+        } else if (newView instanceof EvaluatorDashboardUI evaluator) {
+            evaluator.setVisible(true);
+        } else if (newView instanceof CompanyDashboardUI company) {
+            company.setVisible(true);
+        } else if (newView instanceof AdminDashboardUI admin) {
+            admin.setVisible(true);
+        } else if (newView instanceof LoginUI login) {
+            login.setVisible(true);
+        }
     }
 
-    public static void showError(Component parent, String message, String title) {
-        JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
+    public static void navigateTo(Object newView, Object currentView) {
+        openWindow(newView, currentView);
     }
 
-    public static boolean showConfirmation(Component parent, String message, String title) {
-        int result = JOptionPane.showConfirmDialog(
-                parent,
-                message,
-                title,
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-        );
-        return result == JOptionPane.YES_OPTION;
+    public static void closeWindow(Object view) {
+        // JavaFX windows are stage-managed by each screen class.
+    }
+
+    public static void centerRelativeTo(Object child, Object parent) {
+        // Stage centering is handled by JavaFX runtime.
+    }
+
+    public static void centerOnScreen(Object frame) {
+        // Stage centering is handled by JavaFX runtime.
+    }
+
+    public static void showInfo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    public static void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    public static boolean showConfirmation(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        return alert.showAndWait().filter(button -> button == ButtonType.OK).isPresent();
     }
 }
