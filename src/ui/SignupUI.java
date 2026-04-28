@@ -30,6 +30,8 @@ public class SignupUI {
     private Label dynamicFieldLabel2;
     private TextField dynamicValue1Field;
     private TextField dynamicValue2Field;
+    private VBox dynamicContainer1;
+    private VBox dynamicContainer2;
 
     public void show(Stage stage) {
         this.stage = stage;
@@ -145,22 +147,22 @@ public class SignupUI {
         });
 
         VBox userGroup = createInputWithLabel("Username", "john_dev");
-        TextField uField = (TextField) userGroup.getChildren().get(1);
+        TextField uField = extractTextField(userGroup);
         
         VBox emailGroup = createInputWithLabel("Email Address", "john@example.com");
-        TextField eField = (TextField) emailGroup.getChildren().get(1);
+        TextField eField = extractTextField(emailGroup);
 
         dynamicFieldLabel1 = new Label();
         dynamicFieldLabel1.getStyleClass().add("field-label");
         dynamicValue1Field = new TextField();
         dynamicValue1Field.getStyleClass().add("text-input");
-        VBox d1 = new VBox(0, dynamicFieldLabel1, wrapInput(dynamicValue1Field));
+        dynamicContainer1 = new VBox(0, dynamicFieldLabel1, wrapInput(dynamicValue1Field));
 
         dynamicFieldLabel2 = new Label();
         dynamicFieldLabel2.getStyleClass().add("field-label");
         dynamicValue2Field = new TextField();
         dynamicValue2Field.getStyleClass().add("text-input");
-        VBox d2 = new VBox(0, dynamicFieldLabel2, wrapInput(dynamicValue2Field));
+        dynamicContainer2 = new VBox(0, dynamicFieldLabel2, wrapInput(dynamicValue2Field));
 
         Label passLabel = new Label("Password");
         passLabel.getStyleClass().add("field-label");
@@ -191,7 +193,7 @@ public class SignupUI {
         VBox content = new VBox(0, 
             welcome, title, sub,
             roleLabel, roleBox,
-            userGroup, emailGroup, d1, d2, 
+            userGroup, emailGroup, dynamicContainer1, dynamicContainer2, 
             passLabel, pWrap, errorMsg, 
             signupBtn, back
         );
@@ -222,10 +224,18 @@ public class SignupUI {
         return box;
     }
 
+    private TextField extractTextField(VBox group) {
+        HBox box = (HBox) group.getChildren().get(1);
+        return (TextField) box.getChildren().get(0);
+    }
+
     private void refreshDynamicLabels() {
-        dynamicFieldLabel2.setVisible(false);
-        dynamicFieldLabel2.setManaged(false);
-        dynamicValue1Field.getParent().setVisible(true); // Ensure container is visible
+        if (dynamicContainer2 == null) return; // Prevent NPE during init
+
+        dynamicContainer2.setVisible(false);
+        dynamicContainer2.setManaged(false);
+        dynamicContainer1.setVisible(true);
+        dynamicContainer1.setManaged(true);
         
         switch (selectedRole) {
             case "Developer" -> {
@@ -234,11 +244,11 @@ public class SignupUI {
             }
             case "Company" -> {
                 dynamicFieldLabel1.setText("Company Name");
+                dynamicValue1Field.setPromptText("Acme Corp");
                 dynamicFieldLabel2.setText("Industry");
-                dynamicFieldLabel2.setVisible(true);
-                dynamicFieldLabel2.setManaged(true);
-                dynamicValue2Field.getParent().setVisible(true);
-                dynamicValue2Field.getParent().setManaged(true);
+                dynamicValue2Field.setPromptText("Technology");
+                dynamicContainer2.setVisible(true);
+                dynamicContainer2.setManaged(true);
             }
             case "Evaluator" -> {
                 dynamicFieldLabel1.setText("Expertise");
