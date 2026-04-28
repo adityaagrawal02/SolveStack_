@@ -187,6 +187,7 @@ public class LoginUI {
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Button forgot = new Button("Forgot password?");
         forgot.getStyleClass().add("link-btn");
+        forgot.setOnAction(e -> showForgotPasswordDialog());
         controls.getChildren().addAll(remember, spacer, forgot);
         VBox.setMargin(controls, new Insets(16, 0, 24, 0));
 
@@ -286,6 +287,7 @@ public class LoginUI {
             showError(errorMsg, "Invalid credentials.");
             return;
         }
+        user.login(p);
 
         String userRole = DashboardRouter.normalizeRole(user.getRole());
         String selRole = DashboardRouter.normalizeRole(selectedRole);
@@ -302,5 +304,42 @@ public class LoginUI {
         errorMsg.setText(msg);
         errorMsg.setVisible(true);
         errorMsg.setManaged(true);
+    }
+
+    private void showForgotPasswordDialog() {
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+        dialog.setTitle("Reset Password");
+        dialog.setHeaderText("Enter your username to reset your password");
+        dialog.setContentText("Username:");
+        dialog.showAndWait().ifPresent(username -> {
+            if (UserRepository.getInstance().getUserRole(username) != null) {
+                String secQ = UserRepository.getInstance().getSecurityQuestion(username);
+                if (secQ != null && !secQ.isBlank()) {
+                    javafx.scene.control.TextInputDialog secDialog = new javafx.scene.control.TextInputDialog();
+                    secDialog.setTitle("Security Question");
+                    secDialog.setHeaderText("Please answer the security question to verify your identity.");
+                    secDialog.setContentText(secQ + ":");
+                    secDialog.showAndWait().ifPresent(answer -> {
+                        if (UserRepository.getInstance().verifySecurityAnswer(username, answer)) {
+                            javafx.scene.control.TextInputDialog passDialog = new javafx.scene.control.TextInputDialog();
+                            passDialog.setTitle("New Password");
+                            passDialog.setHeaderText("Enter your new password");
+                            passDialog.setContentText("New Password:");
+                            passDialog.showAndWait().ifPresent(newPass -> {
+                                if (UserRepository.getInstance().updatePassword(username, newPass)) {
+                                    FxComponents.showInfo("Success", "Password updated successfully.");
+                                }
+                            });
+                        } else {
+                            FxComponents.showError("Error", "Incorrect security answer.");
+                        }
+                    });
+                } else {
+                    FxComponents.showError("Error", "No security question set for this user.");
+                }
+            } else {
+                FxComponents.showError("Error", "User not found.");
+            }
+        });
     }
 }
