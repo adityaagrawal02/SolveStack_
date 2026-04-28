@@ -67,13 +67,13 @@ public class LoginUI {
     private Scene buildScene() {
         HBox shell = new HBox(0);
         shell.getStyleClass().add("auth-shell");
-        
+
         StackPane visualSide = buildVisualSide();
         VBox formSide = buildFormSide();
-        
+
         HBox.setHgrow(visualSide, Priority.ALWAYS);
         HBox.setHgrow(formSide, Priority.ALWAYS);
-        
+
         visualSide.prefWidthProperty().bind(shell.widthProperty().multiply(0.5));
         formSide.prefWidthProperty().bind(shell.widthProperty().multiply(0.5));
 
@@ -87,40 +87,39 @@ public class LoginUI {
     private StackPane buildVisualSide() {
         StackPane pane = new StackPane();
         pane.getStyleClass().add("visual-panel");
-        
+
         // Background Glow
         Circle glow = new Circle(280);
         glow.getStyleClass().add("eclipse-background");
-        
+
         // Ring
         Circle ring = new Circle(240);
         ring.getStyleClass().add("eclipse-ring");
-        
+
         // Logo Text
         VBox logoContent = new VBox(-5);
         logoContent.setAlignment(Pos.CENTER);
-        
+
         LogoPanel logo = new LogoPanel(false, 64);
         logo.setAlignment(Pos.CENTER);
         VBox.setMargin(logo, new Insets(0, 0, 20, 0));
-        
+
         Label motto = new Label("Where innovation meets execution.");
         motto.getStyleClass().add("auth-sub");
         motto.setStyle("-fx-font-size: 18px; -fx-font-weight: 500;");
-        
+
         logoContent.getChildren().addAll(logo, motto);
-        
+
         pane.getChildren().addAll(glow, ring, logoContent);
         StackPane.setAlignment(logoContent, Pos.CENTER);
-        
+
         // Subtle animation
         Timeline anim = new Timeline(
-            new KeyFrame(Duration.ZERO, new KeyValue(ring.scaleXProperty(), 1.0), new KeyValue(ring.scaleYProperty(), 1.0)),
-            new KeyFrame(Duration.millis(3000), 
-                new KeyValue(ring.scaleXProperty(), 1.02, Interpolator.EASE_BOTH), 
-                new KeyValue(ring.scaleYProperty(), 1.02, Interpolator.EASE_BOTH)
-            )
-        );
+                new KeyFrame(Duration.ZERO, new KeyValue(ring.scaleXProperty(), 1.0),
+                        new KeyValue(ring.scaleYProperty(), 1.0)),
+                new KeyFrame(Duration.millis(3000),
+                        new KeyValue(ring.scaleXProperty(), 1.02, Interpolator.EASE_BOTH),
+                        new KeyValue(ring.scaleYProperty(), 1.02, Interpolator.EASE_BOTH)));
         anim.setCycleCount(Animation.INDEFINITE);
         anim.setAutoReverse(true);
         anim.play();
@@ -132,39 +131,41 @@ public class LoginUI {
         VBox container = new VBox();
         container.setAlignment(Pos.CENTER);
         container.setPadding(new Insets(40));
-        
+
         VBox card = new VBox(2);
         card.getStyleClass().add("auth-card");
         card.setMaxWidth(500);
-        
+
         Label welcome = new Label("Welcome back");
         welcome.getStyleClass().add("welcome-label");
-        
+
         Label title = new Label("Sign in to your account");
         title.getStyleClass().add("auth-title");
-        
+
         Label sub = new Label("Enter your details to access your workspace.");
         sub.getStyleClass().add("auth-sub");
         VBox.setMargin(sub, new Insets(0, 0, 10, 0));
-        
+
         // Role Selection
         Label roleLabel = new Label("Sign in as");
         roleLabel.getStyleClass().add("field-label");
-        
+
         HBox roleBox = new HBox(12);
         ToggleGroup group = new ToggleGroup();
-        String[] roles = {"Company", "Developer", "Evaluator", "Admin"};
+        String[] roles = { "Company", "Developer", "Evaluator", "Admin" };
         for (String r : roles) {
             ToggleButton tb = new ToggleButton(r);
             tb.getStyleClass().add("role-chip");
             tb.setToggleGroup(group);
-            if (r.equals(selectedRole)) tb.setSelected(true);
+            if (r.equals(selectedRole))
+                tb.setSelected(true);
             roleBox.getChildren().add(tb);
         }
         group.selectedToggleProperty().addListener((obs, old, nv) -> {
-            if (nv instanceof ToggleButton tb) selectedRole = tb.getText();
+            if (nv instanceof ToggleButton tb)
+                selectedRole = tb.getText();
         });
-        
+
         // Username
         Label userLabel = new Label("Username");
         userLabel.getStyleClass().add("field-label");
@@ -176,7 +177,7 @@ public class LoginUI {
         passLabel.getStyleClass().add("field-label");
         HBox passInput = createPassField("\uD83D\uDD12", "••••••••••••");
         PasswordField pField = (PasswordField) passInput.getChildren().get(1);
-        
+
         // Controls Row
         HBox controls = new HBox(0);
         controls.setAlignment(Pos.CENTER_LEFT);
@@ -200,7 +201,7 @@ public class LoginUI {
         signIn.getStyleClass().add("primary-btn");
         signIn.setMaxWidth(Double.MAX_VALUE);
         signIn.setOnAction(e -> authenticate(uField, pField, errorMsg));
-        
+
         HBox footer = new HBox(6);
         footer.setAlignment(Pos.CENTER);
         footer.setPadding(new Insets(16, 0, 0, 0));
@@ -210,7 +211,7 @@ public class LoginUI {
         create.getStyleClass().add("link-btn");
         create.setOnAction(e -> new SignupUI().show(stage));
         footer.getChildren().addAll(noAcc, create);
-        
+
         // Demo
         VBox demoBox = new VBox(8);
         demoBox.getStyleClass().add("demo-divider");
@@ -221,14 +222,13 @@ public class LoginUI {
         VBox.setMargin(demoBox, new Insets(32, 0, 0, 0));
 
         card.getChildren().addAll(
-            welcome, title, sub, 
-            roleLabel, roleBox,
-            userLabel, userInput,
-            passLabel, passInput,
-            controls, errorMsg,
-            signIn, footer, demoBox
-        );
-        
+                welcome, title, sub,
+                roleLabel, roleBox,
+                userLabel, userInput,
+                passLabel, passInput,
+                controls, errorMsg,
+                signIn, footer, demoBox);
+
         container.getChildren().add(card);
         return container;
     }
@@ -237,16 +237,16 @@ public class LoginUI {
         HBox box = new HBox(0);
         box.getStyleClass().add("input-field-container");
         box.setAlignment(Pos.CENTER_LEFT);
-        
+
         Label icon = new Label(iconChar);
         icon.getStyleClass().add("auth-sub");
         icon.setPadding(new Insets(0, 0, 0, 12));
-        
+
         TextField field = new TextField();
         field.setPromptText(prompt);
         field.getStyleClass().add("text-input");
         HBox.setHgrow(field, Priority.ALWAYS);
-        
+
         box.getChildren().addAll(icon, field);
         return box;
     }
@@ -255,20 +255,20 @@ public class LoginUI {
         HBox box = new HBox(0);
         box.getStyleClass().add("input-field-container");
         box.setAlignment(Pos.CENTER_LEFT);
-        
+
         Label icon = new Label(iconChar);
         icon.getStyleClass().add("auth-sub");
         icon.setPadding(new Insets(0, 0, 0, 12));
-        
+
         PasswordField field = new PasswordField();
         field.setPromptText(prompt);
         field.getStyleClass().add("password-input");
         HBox.setHgrow(field, Priority.ALWAYS);
-        
+
         Label eye = new Label("\uD83D\uDC41"); // Eye icon
         eye.getStyleClass().add("ghost-btn");
         eye.setPadding(new Insets(0, 12, 0, 0));
-        
+
         box.getChildren().addAll(icon, field, eye);
         return box;
     }
@@ -299,7 +299,7 @@ public class LoginUI {
         UserSession.getInstance().setCurrentUser(user, userRole);
         DashboardRouter.openDashboard(stage, userRole);
     }
-    
+
     private void showError(Label errorMsg, String msg) {
         errorMsg.setText(msg);
         errorMsg.setVisible(true);

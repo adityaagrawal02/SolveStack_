@@ -104,7 +104,7 @@ public class Evaluator extends User implements Evaluable {
         }
 
         submission.updateStatus(Submission.Status.UNDER_REVIEW);
-        submission.calculateScore(score, feedback);
+        submission.evaluate(score, feedback);
 
         Submission.Status result = (score >= 50.0)
                 ? Submission.Status.ACCEPTED
@@ -129,7 +129,7 @@ public class Evaluator extends User implements Evaluable {
             System.out.println("[ERROR] models.Submission and feedback cannot be null/blank.");
             return;
         }
-        submission.calculateScore(submission.getScore(), feedback);
+        submission.evaluate(submission.getScore(), feedback);
         System.out.println("[FEEDBACK] Written feedback provided for: "
                 + submission.getSubmissionId());
     }
@@ -147,7 +147,7 @@ public class Evaluator extends User implements Evaluable {
             System.out.println("[ERROR] models.Submission cannot be null.");
             return;
         }
-        submission.calculateScore(score, submission.getEvaluatorFeedback());
+        submission.evaluate(score, submission.getEvaluatorFeedback());
         System.out.println("[SCORE ASSIGNED] " + submission.getSubmissionId()
                 + " → " + score + "/100");
     }
