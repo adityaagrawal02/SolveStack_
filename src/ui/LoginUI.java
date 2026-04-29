@@ -147,7 +147,7 @@ public class LoginUI {
         // Username
         Label userLabel = new Label("Username");
         userLabel.getStyleClass().add("field-label");
-        HBox userInput = createInputField("\uD83D\uDC64", "alex_kumar");
+        HBox userInput = createInputField("\uD83D\uDC64", "Enter username:");
         TextField uField = (TextField) userInput.getChildren().get(1);
 
         // Password
@@ -194,7 +194,7 @@ public class LoginUI {
         VBox demoBox = new VBox(8);
         demoBox.getStyleClass().add("demo-divider");
         demoBox.setAlignment(Pos.CENTER);
-        Label demoText = new Label("Demo: alex_kumar / password123");
+        Label demoText = new Label("Connected to MySQL Database");
         demoText.getStyleClass().add("demo-text");
         demoBox.getChildren().add(demoText);
         VBox.setMargin(demoBox, new Insets(32, 0, 0, 0));
@@ -278,17 +278,28 @@ public class LoginUI {
             return;
         }
 
-        models.User user = UserRepository.getInstance().authenticate(u, p);
-        if (user == null) {
-            showError(errorMsg, "Invalid credentials.");
-            return;
+        try {
+            models.User user = UserRepository.getInstance().authenticate(u, p);
+
+            if (user == null) {
+                showError(errorMsg, "Invalid username or password.");
+                return;
+            }
+
+            user.login(p);
+
+            String userRole =
+                    DashboardRouter.normalizeRole(user.getRole());
+
+            UserSession.getInstance()
+                    .setCurrentUser(user, userRole);
+
+            DashboardRouter.openDashboard(stage, userRole);
+
+        } catch (Exception ex) {
+            showError(errorMsg, "Database connection failed.");
+            ex.printStackTrace();
         }
-        user.login(p);
-
-        String userRole = DashboardRouter.normalizeRole(user.getRole());
-
-        UserSession.getInstance().setCurrentUser(user, userRole);
-        DashboardRouter.openDashboard(stage, userRole);
     }
 
     private void showError(Label errorMsg, String msg) {

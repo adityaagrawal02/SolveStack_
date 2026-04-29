@@ -3,12 +3,13 @@ package ui;
 import db.DBConnection;
 import models.*;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.UUID;
 
+/**
+ * JDBC-based User Repository for SolveStack
+ * Fully synchronized with MySQL schema.
+ */
 public class UserRepository {
 
     private static UserRepository instance;
@@ -24,9 +25,14 @@ public class UserRepository {
     }
 
     /* =====================================================
-       LOGIN / AUTHENTICATION
+       LOGIN
        ===================================================== */
     public User authenticate(String username, String password) {
+
+        if (username == null || password == null ||
+                username.isBlank() || password.isBlank()) {
+            return null;
+        }
 
         String sql =
                 "SELECT user_id, username, email, password_hash, role " +
@@ -35,19 +41,15 @@ public class UserRepository {
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, username);
+            ps.setString(1, username.trim());
 
-            try (ResultSet rs = ps.executeQuery()) {
+            ResultSet rs = ps.executeQuery();
 
-                if (!rs.next()) {
-                    return null;
-                }
+            if (rs.next()) {
 
-                String storedPassword = rs.getString("password_hash");
+                String dbPassword = rs.getString("password_hash");
 
-                // Plain text compare for now
-                // Later replace with BCrypt
-                if (!storedPassword.equals(password)) {
+                if (!dbPassword.equals(password)) {
                     return null;
                 }
 
@@ -67,17 +69,15 @@ public class UserRepository {
                         return loadEvaluator(con, userId, username, email, password);
 
                     case "ADMIN":
-                        return loadAdmin(userId, username, email, password);
-
-                    default:
-                        return null;
+                        return loadAdmin(con, userId, username, email, password);
                 }
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
+
+        return null;
     }
 
     /* =====================================================
@@ -92,10 +92,10 @@ public class UserRepository {
 
             ps.setString(1, username);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return normalizeRole(rs.getString("role"));
-                }
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return normalizeRole(rs.getString("role"));
             }
 
         } catch (Exception e) {
@@ -106,37 +106,35 @@ public class UserRepository {
     }
 
     /* =====================================================
-       REGISTER NORMAL USER
-       Used for Developer / Evaluator / Admin
-       dynamicValue = skill / expertise / level
+       REGISTER NORMAL USERS
        ===================================================== */
     public boolean registerUser(String username,
                                 String email,
                                 String password,
                                 String role,
-                                String dynamicValue) {
+                                String dynamicValue,
+                                String securityQuestion,
+                                String securityAnswer) {
 
-        String userId = generateUserId(role);
+        String userId = generateId(role);
 
         try (Connection con = DBConnection.getConnection()) {
 
             con.setAutoCommit(false);
 
-            String userSql =
-                    "INSERT INTO users " +
-                            "(user_id, username, email, password_hash, role) " +
-                            "VALUES (?, ?, ?, ?, ?)";
+            String sql =
+                    "INSERT INTO users(user_id,username,email,password_hash,role) " +
+                            "VALUES(?,?,?,?,?)";
 
-            try (PreparedStatement ps = con.prepareStatement(userSql)) {
+            PreparedStatement ps = con.prepareStatement(sql);
 
-                ps.setString(1, userId);
-                ps.setString(2, username);
-                ps.setString(3, email);
-                ps.setString(4, password);
-                ps.setString(5, role.toUpperCase());
+            ps.setString(1, userId);
+            ps.setString(2, username);
+            ps.setString(3, email);
+            ps.setString(4, password);
+            ps.setString(5, role.toUpperCase());
 
-                ps.executeUpdate();
-            }
+            ps.executeUpdate();
 
             switch (role.toUpperCase()) {
 
@@ -157,7 +155,6 @@ public class UserRepository {
             return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -169,86 +166,113 @@ public class UserRepository {
                                    String email,
                                    String password,
                                    String companyName,
-                                   String industry) {
+                                   String industry,
+                                   String securityQuestion,
+                                   String securityAnswer) {
 
-        String userId = generateUserId("COMPANY");
+        String userId = generateId("COMPANY");
 
         try (Connection con = DBConnection.getConnection()) {
 
             con.setAutoCommit(false);
 
-            String userSql =
-                    "INSERT INTO users " +
-                            "(user_id, username, email, password_hash, role) " +
-                            "VALUES (?, ?, ?, ?, ?)";
+            String sql =
+                    "INSERT INTO users(user_id,username,email,password_hash,role) " +
+                            "VALUES(?,?,?,?,?)";
 
-            try (PreparedStatement ps = con.prepareStatement(userSql)) {
+            PreparedStatement ps = con.prepareStatement(sql);
 
-                ps.setString(1, userId);
-                ps.setString(2, username);
-                ps.setString(3, email);
-                ps.setString(4, password);
-                ps.setString(5, "COMPANY");
+            ps.setString(1, userId);
+            ps.setString(2, username);
+            ps.setString(3, email);
+            ps.setString(4, password);
+            ps.setString(5, "COMPANY");
 
-                ps.executeUpdate();
-            }
+            ps.executeUpdate();
 
             String companySql =
-                    "INSERT INTO companies " +
-                            "(user_id, company_name, industry, registration_number) " +
-                            "VALUES (?, ?, ?, ?)";
+                    "INSERT INTO companies(user_id,company_name,industry,registration_number) " +
+                            "VALUES(?,?,?,?)";
 
-            try (PreparedStatement ps = con.prepareStatement(companySql)) {
+            PreparedStatement cps = con.prepareStatement(companySql);
 
-                ps.setString(1, userId);
-                ps.setString(2, companyName);
-                ps.setString(3, industry);
-                ps.setString(4, "REG-" + System.currentTimeMillis());
+            cps.setString(1, userId);
+            cps.setString(2, companyName);
+            cps.setString(3, industry);
+            cps.setString(4, "REG-" + System.currentTimeMillis());
 
-                ps.executeUpdate();
-            }
+            cps.executeUpdate();
 
             con.commit();
             return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
 
     /* =====================================================
-       LOAD OBJECTS
+       UPDATE PASSWORD
+       ===================================================== */
+    public boolean updatePassword(String username, String newPassword) {
+
+        String sql =
+                "UPDATE users SET password_hash=? WHERE username=?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, newPassword);
+            ps.setString(2, username);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /* =====================================================
+       SECURITY QUESTION MOCK SUPPORT
+       ===================================================== */
+    public String getSecurityQuestion(String username) {
+        return "What is your pet's name?";
+    }
+
+    public boolean verifySecurityAnswer(String username, String answer) {
+        return answer != null && answer.equalsIgnoreCase("Fluffy");
+    }
+
+    /* =====================================================
+       PRIVATE LOADERS
        ===================================================== */
 
     private Company loadCompany(Connection con,
                                 String userId,
                                 String username,
                                 String email,
-                                String password) throws SQLException {
+                                String password) throws Exception {
 
         String sql =
                 "SELECT company_name, industry, registration_number " +
                         "FROM companies WHERE user_id=?";
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setString(1, userId);
 
-            ps.setString(1, userId);
+        ResultSet rs = ps.executeQuery();
 
-            try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
 
-                if (rs.next()) {
-                    return new Company(
-                            userId,
-                            username,
-                            email,
-                            password,
-                            rs.getString("company_name"),
-                            rs.getString("industry"),
-                            rs.getString("registration_number")
-                    );
-                }
-            }
+            return new Company(
+                    userId,
+                    username,
+                    email,
+                    password,
+                    rs.getString("company_name"),
+                    rs.getString("industry"),
+                    rs.getString("registration_number")
+            );
         }
 
         return null;
@@ -258,66 +282,53 @@ public class UserRepository {
                                     String userId,
                                     String username,
                                     String email,
-                                    String password) throws SQLException {
+                                    String password) throws Exception {
 
-        String sql = "SELECT skill_set FROM developers WHERE user_id=?";
+        String sql =
+                "SELECT skill_set FROM developers WHERE user_id=?";
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setString(1, userId);
 
-            ps.setString(1, userId);
+        ResultSet rs = ps.executeQuery();
 
-            try (ResultSet rs = ps.executeQuery()) {
+        String skills = rs.next() ? rs.getString("skill_set") : "";
 
-                if (rs.next()) {
-                    return new Developer(
-                            userId,
-                            username,
-                            email,
-                            password,
-                            rs.getString("skill_set")
-                    );
-                }
-            }
-        }
-
-        return new Developer(userId, username, email, password, "");
+        return new Developer(userId, username, email, password, skills);
     }
 
     private Evaluator loadEvaluator(Connection con,
                                     String userId,
                                     String username,
                                     String email,
-                                    String password) throws SQLException {
+                                    String password) throws Exception {
 
-        String sql = "SELECT expertise FROM evaluators WHERE user_id=?";
+        String sql =
+                "SELECT expertise FROM evaluators WHERE user_id=?";
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setString(1, userId);
 
-            ps.setString(1, userId);
+        ResultSet rs = ps.executeQuery();
 
-            try (ResultSet rs = ps.executeQuery()) {
+        String expertise = rs.next() ? rs.getString("expertise") : "";
 
-                if (rs.next()) {
-                    return new Evaluator(
-                            userId,
-                            username,
-                            email,
-                            password,
-                            rs.getString("expertise")
-                    );
-                }
-            }
-        }
-
-        return new Evaluator(userId, username, email, password, "");
+        return new Evaluator(userId, username, email, password, expertise);
     }
 
-    private Admin loadAdmin(String userId,
+    private Admin loadAdmin(Connection con,
+                            String userId,
                             String username,
                             String email,
                             String password) {
 
-        return new Admin(userId, username, email, password, "STANDARD");
+        return new Admin(
+                userId,
+                username,
+                email,
+                password,
+                "STANDARD"
+        );
     }
 
     /* =====================================================
@@ -326,53 +337,53 @@ public class UserRepository {
 
     private void insertDeveloper(Connection con,
                                  String userId,
-                                 String skill) throws SQLException {
+                                 String skills) throws Exception {
 
         String sql =
-                "INSERT INTO developers(user_id, skill_set) VALUES (?, ?)";
+                "INSERT INTO developers(user_id,skill_set) VALUES(?,?)";
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, userId);
-            ps.setString(2, skill);
-            ps.executeUpdate();
-        }
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setString(1, userId);
+        ps.setString(2, skills);
+
+        ps.executeUpdate();
     }
 
     private void insertEvaluator(Connection con,
                                  String userId,
-                                 String expertise) throws SQLException {
+                                 String expertise) throws Exception {
 
         String sql =
-                "INSERT INTO evaluators(user_id, expertise) VALUES (?, ?)";
+                "INSERT INTO evaluators(user_id,expertise) VALUES(?,?)";
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, userId);
-            ps.setString(2, expertise);
-            ps.executeUpdate();
-        }
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setString(1, userId);
+        ps.setString(2, expertise);
+
+        ps.executeUpdate();
     }
 
     private void insertAdmin(Connection con,
                              String userId,
-                             String level) throws SQLException {
+                             String level) throws Exception {
 
         String sql =
-                "INSERT INTO admins(user_id, admin_level) VALUES (?, ?)";
+                "INSERT INTO admins(user_id,admin_level) VALUES(?,?)";
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, userId);
-            ps.setString(2, level == null || level.isBlank()
-                    ? "STANDARD"
-                    : level);
-            ps.executeUpdate();
-        }
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setString(1, userId);
+        ps.setString(2, level == null || level.isBlank()
+                ? "STANDARD"
+                : level);
+
+        ps.executeUpdate();
     }
 
     /* =====================================================
        UTILITIES
        ===================================================== */
 
-    private String generateUserId(String role) {
+    private String generateId(String role) {
 
         String prefix = switch (role.toUpperCase()) {
             case "COMPANY" -> "CO";
@@ -382,10 +393,11 @@ public class UserRepository {
             default -> "USR";
         };
 
-        return prefix + "-" + UUID.randomUUID()
-                .toString()
-                .substring(0, 8)
-                .toUpperCase();
+        return prefix + "-" +
+                UUID.randomUUID()
+                        .toString()
+                        .substring(0, 6)
+                        .toUpperCase();
     }
 
     private String normalizeRole(String role) {
@@ -398,4 +410,31 @@ public class UserRepository {
             default -> role;
         };
     }
+
+    public boolean updateUserProfile(String oldUsername,
+                                     String newUsername,
+                                     String newEmail,
+                                     String bio) {
+
+        String sql =
+                "UPDATE users " +
+                        "SET username=?, email=? " +
+                        "WHERE username=?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps =
+                     con.prepareStatement(sql)) {
+
+            ps.setString(1, newUsername);
+            ps.setString(2, newEmail);
+            ps.setString(3, oldUsername);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
+

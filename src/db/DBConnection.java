@@ -7,11 +7,18 @@ import java.util.Properties;
 
 public final class DBConnection {
 
+    private static final String HOST = "localhost";
+    private static final String PORT = "3306";
+    private static final String DATABASE = "solvestack";
+
     private static final String URL =
-            "jdbc:mysql://localhost:3306/solvestack"
-                    + "?useSSL=false"
-                    + "&serverTimezone=UTC"
-                    + "&allowPublicKeyRetrieval=true";
+            "jdbc:mysql://" + HOST + ":" + PORT + "/" + DATABASE +
+                    "?useSSL=false" +
+                    "&serverTimezone=UTC" +
+                    "&allowPublicKeyRetrieval=true" +
+                    "&useUnicode=true" +
+                    "&characterEncoding=UTF-8" +
+                    "&autoReconnect=true";
 
     private static final String USERNAME = "root";
     private static final String PASSWORD = "Atherva@123";
@@ -19,16 +26,19 @@ public final class DBConnection {
     static {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
+            System.out.println("MySQL JDBC Driver Loaded Successfully.");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(
-                    "MySQL JDBC Driver not found. Check project dependencies.",
+                    "MySQL JDBC Driver not found. Add mysql-connector-j.jar",
                     e
             );
         }
     }
 
     private DBConnection() {
-        // Prevent object creation
+        throw new UnsupportedOperationException(
+                "DBConnection utility class cannot be instantiated."
+        );
     }
 
     public static Connection getConnection() throws SQLException {
@@ -36,19 +46,36 @@ public final class DBConnection {
         Properties props = new Properties();
         props.setProperty("user", USERNAME);
         props.setProperty("password", PASSWORD);
-        props.setProperty("useUnicode", "true");
-        props.setProperty("characterEncoding", "UTF-8");
 
-        return DriverManager.getConnection(URL, props);
+        Connection connection = DriverManager.getConnection(URL, props);
+
+        if (connection != null && !connection.isClosed()) {
+            System.out.println("Database Connected Successfully.");
+        }
+
+        return connection;
     }
 
     public static void close(Connection con) {
+
         if (con != null) {
             try {
                 con.close();
             } catch (SQLException e) {
-                System.err.println("Failed to close connection: " + e.getMessage());
+                System.err.println(
+                        "Failed to close DB connection: " + e.getMessage()
+                );
             }
+        }
+    }
+
+    public static void testConnection() {
+
+        try (Connection con = getConnection()) {
+            System.out.println("Connection Test Passed.");
+        } catch (Exception e) {
+            System.err.println("Connection Test Failed.");
+            e.printStackTrace();
         }
     }
 }
