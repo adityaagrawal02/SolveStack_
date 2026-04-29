@@ -38,7 +38,8 @@ public class SubmissionsUI extends FxModalWindow {
         subtitle.getStyleClass().add("muted");
 
         VBox list = new VBox(10);
-        for (SubmissionRow row : rows()) {
+        List<models.Submission> subs = ChallengeRepository.getInstance().getAllSubmissions();
+        for (models.Submission row : subs) {
             list.getChildren().add(submissionCard(row));
         }
 
@@ -52,20 +53,32 @@ public class SubmissionsUI extends FxModalWindow {
         return root;
     }
 
-    private VBox submissionCard(SubmissionRow row) {
-        Label person = new Label(row.author() + "   " + row.solution());
+    private VBox submissionCard(models.Submission s) {
+        Label person = new Label(s.getDeveloperUsername() + "   " + s.getSubmissionId());
         person.getStyleClass().add("table-title");
 
-        Label stack = new Label(row.stack());
-        stack.getStyleClass().add("muted");
+        Label summary = new Label(s.getSolutionSummary());
+        summary.getStyleClass().add("muted");
 
-        Label status = new Label(row.status());
-        status.getStyleClass().addAll("status-pill", row.statusClass());
+        Label status = new Label(s.getStatus().toString());
+        status.getStyleClass().addAll("status-pill", "chip-info");
 
-        HBox footer = new HBox(status);
-        footer.setAlignment(Pos.CENTER_LEFT);
+        Button eval = FxComponents.primaryBtn("Evaluate", () -> new EvaluationUI(getStage(), s.getSubmissionId()).setVisible(true));
+        eval.getStyleClass().add("compact-btn");
 
-        return FxComponents.card(person, stack, footer);
+        models.User u = UserSession.getInstance().getCurrentUser();
+        eval.setVisible(u instanceof models.Evaluator);
+        eval.setManaged(u instanceof models.Evaluator);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox bottom = new HBox(10, status, spacer, eval);
+        bottom.setAlignment(Pos.CENTER_LEFT);
+
+        VBox card = FxComponents.card(person, summary, bottom);
+        card.getStyleClass().add("submission-card");
+        return card;
     }
 
     private HBox topBar() {
@@ -83,16 +96,5 @@ public class SubmissionsUI extends FxModalWindow {
         return top;
     }
 
-    private List<SubmissionRow> rows() {
-        return List.of(
-                new SubmissionRow("Rahul K.", "Graph Neural Network Optimizer", "Python, PyTorch, FastAPI", "Under Review", "chip-warning"),
-                new SubmissionRow("Priya M.", "Reinforcement Learning Planner", "TensorFlow, Docker", "Accepted", "chip-success"),
-                new SubmissionRow("Siddharth A.", "Genetic Algorithm Solver", "Java, Spring Boot", "Under Review", "chip-warning"),
-                new SubmissionRow("Vishal R.", "MILP Optimization Model", "Python, PuLP, Flask", "Pending", "chip-info")
-        );
-    }
-
-    private record SubmissionRow(String author, String solution, String stack, String status, String statusClass) {
-    }
 }
 

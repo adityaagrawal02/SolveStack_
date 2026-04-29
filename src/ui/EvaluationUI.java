@@ -19,13 +19,11 @@ import javafx.scene.layout.VBox;
 
 public class EvaluationUI extends FxModalWindow {
 
-    private final String developerName;
-    private final String solutionName;
+    private final String submissionId;
 
-    public EvaluationUI(Object parent, String developerName, String solutionName) {
+    public EvaluationUI(Object parent, String submissionId) {
         super("SolveStack - Evaluate Submission", 920, 760, parent);
-        this.developerName = developerName == null || developerName.isBlank() ? "Developer" : developerName;
-        this.solutionName = solutionName == null || solutionName.isBlank() ? "Submission" : solutionName;
+        this.submissionId = submissionId;
     }
 
     @Override
@@ -40,7 +38,7 @@ public class EvaluationUI extends FxModalWindow {
         Label title = new Label("Evaluate Submission");
         title.getStyleClass().add("page-title");
 
-        Label subtitle = new Label(developerName + "   " + solutionName);
+        Label subtitle = new Label("Reviewing submission: " + submissionId);
         subtitle.getStyleClass().add("muted");
 
         Slider innovation = slider(75);
@@ -66,9 +64,8 @@ public class EvaluationUI extends FxModalWindow {
                 scoreRow("Feasibility", feasibility),
                 FxComponents.sep(),
                 totalRow(totalValue),
-                FxComponents.formLabel("Feedback"),
                 feedback,
-                actionRow(feedback)
+                actionRow(feedback, total)
         );
         scoreCard.getStyleClass().add("form-card");
 
@@ -120,14 +117,16 @@ public class EvaluationUI extends FxModalWindow {
         return row;
     }
 
-    private HBox actionRow(TextArea feedback) {
-        Button submit = FxComponents.primaryBtn("Submit Evaluation", () -> {
-            if (feedback.getText() == null || feedback.getText().trim().isBlank()) {
-                FxComponents.showError("Feedback required", "Please provide evaluator feedback before submitting.");
-                return;
+    private HBox actionRow(TextArea feedback, IntegerProperty total) {
+        Button submit = FxComponents.primaryBtn("Finalize Evaluation", () -> {
+            models.Submission s = ChallengeRepository.getInstance().getSubmissionById(submissionId);
+            if (s != null) {
+                s.evaluate(total.get(), feedback.getText());
+                FxComponents.showInfo("Evaluation Saved", "Score of " + total.get() + " assigned to " + submissionId);
+                dispose();
+            } else {
+                FxComponents.showError("Error", "Submission not found.");
             }
-            FxComponents.showInfo("Evaluation submitted", "Your score and feedback were published successfully.");
-            dispose();
         });
 
         Button cancel = FxComponents.outlineBtn("Cancel", this::dispose);

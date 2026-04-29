@@ -28,15 +28,16 @@ public final class FxDashboardUI {
         BorderPane root = new BorderPane();
         root.getStyleClass().add("app-root");
 
-        // Sidebar
-        VBox sidebar = buildSidebar(stage, role);
-        root.setLeft(sidebar);
-
-        // Main content area
+        // Main content area - we use a wrapper so we can swap the center easily
         BorderPane contentArea = new BorderPane();
         contentArea.setTop(buildTopBar(stage, role));
-        contentArea.setCenter(buildBody(stage, role));
+        
+        // Initial body
+        contentArea.setCenter(buildBody(stage, role, "Dashboard"));
 
+        // Sidebar - pass contentArea so it can switch views
+        VBox sidebar = buildSidebar(stage, role, contentArea);
+        root.setLeft(sidebar);
         root.setCenter(contentArea);
 
         Scene scene = new Scene(root, Theme.WINDOW_WIDTH, Theme.WINDOW_HEIGHT);
@@ -44,7 +45,7 @@ public final class FxDashboardUI {
         return scene;
     }
 
-    private static VBox buildSidebar(Stage stage, String role) {
+    private static VBox buildSidebar(Stage stage, String role, BorderPane contentArea) {
         VBox sidebar = new VBox(8);
         sidebar.getStyleClass().add("sidebar");
         sidebar.setPrefWidth(240);
@@ -60,6 +61,14 @@ public final class FxDashboardUI {
         Button messages = navItem("\uD83D\uDCE4 Messages", false);
         Button settings = navItem("\u2699 Settings", false);
 
+        List<Button> navButtons = List.of(dash, explore, myWork, messages, settings);
+
+        dash.setOnAction(e -> updateActiveNav(navButtons, dash, contentArea, stage, role, "Dashboard"));
+        explore.setOnAction(e -> updateActiveNav(navButtons, explore, contentArea, stage, role, "Explore"));
+        myWork.setOnAction(e -> updateActiveNav(navButtons, myWork, contentArea, stage, role, "My Projects"));
+        messages.setOnAction(e -> updateActiveNav(navButtons, messages, contentArea, stage, role, "Messages"));
+        settings.setOnAction(e -> updateActiveNav(navButtons, settings, contentArea, stage, role, "Settings"));
+
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
@@ -71,6 +80,12 @@ public final class FxDashboardUI {
 
         sidebar.getChildren().addAll(brand, dash, explore, myWork, messages, settings, spacer, logout);
         return sidebar;
+    }
+
+    private static void updateActiveNav(List<Button> buttons, Button active, BorderPane contentArea, Stage stage, String role, String view) {
+        buttons.forEach(b -> b.getStyleClass().remove("nav-item-active"));
+        active.getStyleClass().add("nav-item-active");
+        contentArea.setCenter(buildBody(stage, role, view));
     }
 
     private static Button navItem(String text, boolean active) {
@@ -113,7 +128,17 @@ public final class FxDashboardUI {
         return topBar;
     }
 
-    private static ScrollPane buildBody(Stage stage, String role) {
+    private static Node buildBody(Stage stage, String role, String view) {
+        return switch (view) {
+            case "Explore" -> buildExploreView(stage);
+            case "My Projects" -> buildMyProjectsView(stage);
+            case "Messages" -> buildMessagesView();
+            case "Settings" -> buildSettingsView();
+            default -> buildDashboardView(stage, role);
+        };
+    }
+
+    private static ScrollPane buildDashboardView(Stage stage, String role) {
         Label heading = new Label(role + " Overview");
         heading.getStyleClass().add("page-title");
 
@@ -121,10 +146,10 @@ public final class FxDashboardUI {
         subtitle.getStyleClass().add("muted");
 
         HBox metrics = new HBox(16,
-                FxComponents.metric("Active Challenges", metricValue(role, 0)),
-                FxComponents.metric("Submissions", metricValue(role, 1)),
-                FxComponents.metric("In Review", metricValue(role, 2)),
-                FxComponents.metric("Success Rate", metricValue(role, 3))
+                FxComponents.metric(metricLabel(role, 0), metricValue(role, 0)),
+                FxComponents.metric(metricLabel(role, 1), metricValue(role, 1)),
+                FxComponents.metric(metricLabel(role, 2), metricValue(role, 2)),
+                FxComponents.metric(metricLabel(role, 3), metricValue(role, 3))
         );
         metrics.setPadding(new Insets(24, 0, 24, 0));
 
@@ -162,27 +187,261 @@ public final class FxDashboardUI {
         return scroller;
     }
 
+    private static ScrollPane buildExploreView(Stage stage) {
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(40));
+
+        Label heading = new Label("Explore Challenges");
+        heading.getStyleClass().add("page-title");
+
+        Label sub = new Label("Discover active innovation tracks and submit your ideas.");
+        sub.getStyleClass().add("muted");
+
+        VBox list = FxComponents.glassCard();
+        list.getChildren().add(FxComponents.sectionHeader("Open Challenges"));
+
+        List<models.Challenge> challenges = ChallengeRepository.getInstance().getAllChallenges();
+        for (models.Challenge c : challenges) {
+            Label name = new Label(c.getTitle());
+            name.getStyleClass().add("table-title");
+            Label meta = new Label(c.getPostedBy().getUsername() + " • Prize: INR " + c.getPrizeAmount());
+            meta.getStyleClass().add("muted");
+
+            Button applyBtn = FxComponents.primaryBtn("View Details", () -> new ChallengeUI(stage).setVisible(true));
+            applyBtn.getStyleClass().add("compact-btn");
+
+            HBox right = new HBox(applyBtn);
+            right.setAlignment(Pos.CENTER_RIGHT);
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            HBox row = new HBox(12, new VBox(4, name, meta), spacer, right);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(12, 0, 12, 0));
+            row.setStyle("-fx-border-color: transparent transparent #334155 transparent; -fx-border-width: 1px;");
+
+            list.getChildren().add(row);
+        }
+
+        content.getChildren().addAll(heading, sub, list);
+        animateIn(content);
+
+        ScrollPane scroller = new ScrollPane(content);
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("page-scroll");
+        return scroller;
+    }
+
+    private static ScrollPane buildMyProjectsView(Stage stage) {
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(40));
+
+        Label heading = new Label("My Projects");
+        heading.getStyleClass().add("page-title");
+
+        Label sub = new Label("Track the status of your submissions and ongoing work.");
+        sub.getStyleClass().add("muted");
+
+        VBox list = FxComponents.glassCard();
+        models.User currentUser = UserSession.getInstance().getCurrentUser();
+        if (currentUser instanceof models.Developer dev) {
+            List<models.Submission> mySubs = dev.getMySubmissions();
+            if (mySubs.isEmpty()) {
+                list.getChildren().add(new Label("No active projects found."));
+            } else {
+                for (models.Submission s : mySubs) {
+                    Label name = new Label(s.getSubmissionId());
+                    name.getStyleClass().add("table-title");
+                    Label meta = new Label("Status: " + s.getStatus());
+                    meta.getStyleClass().add("muted");
+                    list.getChildren().add(new VBox(4, name, meta));
+                }
+            }
+        }
+        list.getChildren().add(FxComponents.sectionHeader("Recent Submissions"));
+
+        List<String[]> projects = List.of(
+            new String[]{"Graph Neural Network Optimizer", "Supply Chain AI", "Under Review", "chip-warning"},
+            new String[]{"Reinforcement Learning Planner", "Carbon Tracker", "Accepted", "chip-success"},
+            new String[]{"MILP Optimization Model", "Supply Chain AI", "Pending", "chip-info"}
+        );
+
+        for (String[] p : projects) {
+            Label name = new Label(p[0]);
+            name.getStyleClass().add("table-title");
+            Label meta = new Label("Challenge: " + p[1]);
+            meta.getStyleClass().add("muted");
+            
+            Label status = new Label(p[2]);
+            status.getStyleClass().addAll("status-pill", p[3]);
+            
+            HBox right = new HBox(status);
+            right.setAlignment(Pos.CENTER_RIGHT);
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            
+            HBox row = new HBox(12, new VBox(4, name, meta), spacer, right);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(12, 0, 12, 0));
+            row.setStyle("-fx-border-color: transparent transparent #334155 transparent; -fx-border-width: 1px;");
+            
+            list.getChildren().add(row);
+        }
+
+        content.getChildren().addAll(heading, sub, list);
+        animateIn(content);
+
+        ScrollPane scroller = new ScrollPane(content);
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("page-scroll");
+        return scroller;
+    }
+
+    private static ScrollPane buildMessagesView() {
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(40));
+
+        Label heading = new Label("Messages");
+        heading.getStyleClass().add("page-title");
+
+        Label sub = new Label("Communicate with evaluators and team members.");
+        sub.getStyleClass().add("muted");
+
+        VBox list = FxComponents.glassCard();
+        list.getChildren().add(FxComponents.sectionHeader("Inbox"));
+
+        List<String[]> messages = List.of(
+            new String[]{"Evaluator Feedback", "Your submission for Supply Chain AI has been reviewed.", "2 hours ago"},
+            new String[]{"Acme Corp", "We have updated the requirements for the tracking module.", "1 day ago"},
+            new String[]{"System Admin", "Scheduled maintenance tonight at 02:00 AM UTC.", "3 days ago"}
+        );
+
+        for (String[] m : messages) {
+            Label sender = new Label(m[0]);
+            sender.getStyleClass().add("table-title");
+            Label time = new Label(m[2]);
+            time.getStyleClass().add("muted");
+            
+            Label body = new Label(m[1]);
+            body.getStyleClass().add("activity-text");
+            
+            Region r = new Region();
+            HBox.setHgrow(r, Priority.ALWAYS);
+            HBox top = new HBox(sender, r, time);
+            
+            VBox row = new VBox(8, top, body);
+            row.setPadding(new Insets(16, 0, 16, 0));
+            row.setStyle("-fx-border-color: transparent transparent #334155 transparent; -fx-border-width: 1px;");
+            
+            list.getChildren().add(row);
+        }
+
+        content.getChildren().addAll(heading, sub, list);
+        animateIn(content);
+
+        ScrollPane scroller = new ScrollPane(content);
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("page-scroll");
+        return scroller;
+    }
+
+    private static ScrollPane buildSettingsView() {
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(40));
+
+        Label heading = new Label("Settings");
+        heading.getStyleClass().add("page-title");
+
+        Label sub = new Label("Manage your account preferences and profile.");
+        sub.getStyleClass().add("muted");
+
+        models.User currentUser = UserSession.getInstance().getCurrentUser();
+        
+        TextField usernameField = FxComponents.textField(currentUser != null ? currentUser.getUsername() : "Username");
+        if (currentUser != null) usernameField.setText(currentUser.getUsername());
+        
+        TextField emailField = FxComponents.textField(currentUser != null ? currentUser.getEmail() : "Email");
+        if (currentUser != null) emailField.setText(currentUser.getEmail());
+
+        Region spacer = new Region();
+        spacer.setMinHeight(10);
+
+        javafx.scene.control.TextArea bioField = FxComponents.textArea("Add a short bio about your expertise...");
+        if (currentUser != null && currentUser.getProfileBio() != null) {
+            bioField.setText(currentUser.getProfileBio());
+        }
+
+        VBox form = FxComponents.card(
+            FxComponents.sectionHeader("Profile Information"),
+            FxComponents.formLabel("Username"),
+            usernameField,
+            FxComponents.formLabel("Email Address"),
+            emailField,
+            FxComponents.formLabel("Bio"),
+            bioField,
+            spacer,
+            FxComponents.primaryBtn("Save Changes", () -> {
+                if (currentUser != null) {
+                    boolean success = UserRepository.getInstance().updateUserProfile(
+                        currentUser.getUsername(),
+                        usernameField.getText(),
+                        emailField.getText(),
+                        bioField.getText()
+                    );
+                    if (success) {
+                        FxComponents.showInfo("Settings", "Profile updated successfully.");
+                    } else {
+                        FxComponents.showError("Settings", "Failed to update profile. Username might be taken.");
+                    }
+                }
+            })
+        );
+        form.getStyleClass().add("form-card");
+        form.setMaxWidth(600);
+
+        content.getChildren().addAll(heading, sub, form);
+        animateIn(content);
+
+        ScrollPane scroller = new ScrollPane(content);
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("page-scroll");
+        return scroller;
+    }
+
     private static List<Button> actionButtons(Stage stage, String role) {
         return switch (role.toLowerCase()) {
             case "developer" -> List.of(
                     FxComponents.primaryBtn("Browse Challenges", () -> new ChallengeUI(stage).setVisible(true)),
-                    FxComponents.outlineBtn("Submit Solution", () -> new SubmitSolutionUI(stage, "AI-Powered Supply Chain Optimizer").setVisible(true)),
-                    FxComponents.ghostBtn("My Submissions", () -> new SubmissionsUI(stage, "AI-Powered Supply Chain Optimizer").setVisible(true))
+                    FxComponents.outlineBtn("My Submissions", () -> new SubmissionsUI(stage, null).setVisible(true)),
+                    FxComponents.ghostBtn("Leaderboard", () -> new LeaderboardUI(stage).setVisible(true))
             );
-            case "evaluator" -> List.of(
-                    FxComponents.primaryBtn("Evaluate", () -> new EvaluationUI(stage, "Rahul K.", "Graph Neural Network Optimizer").setVisible(true)),
-                    FxComponents.outlineBtn("Leaderboard", () -> new LeaderboardUI(stage).setVisible(true)),
-                    FxComponents.ghostBtn("Pending Queue", () -> new SubmissionsUI(stage, "AI-Powered Supply Chain Optimizer").setVisible(true))
-            );
+            case "evaluator" -> {
+                List<models.Submission> subs = ChallengeRepository.getInstance().getAllSubmissions();
+                String firstSubId = subs.isEmpty() ? "" : subs.get(0).getSubmissionId();
+                yield List.of(
+                        FxComponents.primaryBtn("Evaluate", () -> {
+                            if (!firstSubId.isEmpty())
+                                new EvaluationUI(stage, firstSubId).setVisible(true);
+                            else
+                                FxComponents.showInfo("Queue", "No pending submissions.");
+                        }),
+                        FxComponents.outlineBtn("Leaderboard", () -> new LeaderboardUI(stage).setVisible(true)),
+                        FxComponents.ghostBtn("Pending Queue", () -> new SubmissionsUI(stage, null).setVisible(true))
+                );
+            }
             case "admin" -> List.of(
                     FxComponents.primaryBtn("Pending Verifications", () -> FxComponents.showInfo("Verification Queue", "4 company and evaluator accounts need approval.")),
                     FxComponents.outlineBtn("Moderation", () -> FxComponents.showInfo("Moderation", "Challenge moderation queue has 2 flagged entries.")),
                     FxComponents.ghostBtn("Generate Report", () -> FxComponents.showInfo("Daily Report", "Integrity and usage report generated."))
             );
-            default -> List.of(
+            case "company" -> List.of(
                     FxComponents.primaryBtn("New Challenge", () -> new CreateChallengeUI(stage).setVisible(true)),
                     FxComponents.outlineBtn("View Challenges", () -> new ChallengeUI(stage).setVisible(true)),
-                    FxComponents.ghostBtn("View Submissions", () -> new SubmissionsUI(stage, "AI-Powered Supply Chain Optimizer").setVisible(true))
+                    FxComponents.ghostBtn("View Submissions", () -> new SubmissionsUI(stage, "Active Challenge").setVisible(true))
+            );
+            default -> List.of(
+                    FxComponents.primaryBtn("Quick Action", () -> FxComponents.showInfo("Notice", "Welcome to SolveStack!")),
+                    FxComponents.outlineBtn("Help Center", () -> FxComponents.showInfo("Support", "Support documentation is available in the portal."))
             );
         };
     }
@@ -210,12 +469,23 @@ public final class FxDashboardUI {
         };
     }
 
+    private static String metricLabel(String role, int index) {
+        return switch (role.toLowerCase()) {
+            case "developer" -> List.of("Active Challenges", "My Submissions", "Earned Prizes", "Success Rate").get(index);
+            case "evaluator" -> List.of("Assigned Reviews", "Completed", "Pending", "Avg. Turnaround").get(index);
+            case "admin" -> List.of("Pending Approvals", "Active Users", "Flagged Items", "System Health").get(index);
+            case "company" -> List.of("Live Challenges", "Total Submissions", "Hiring Pipeline", "Conversion").get(index);
+            default -> List.of("Metric A", "Metric B", "Metric C", "Metric D").get(index);
+        };
+    }
+
     private static String metricValue(String role, int index) {
         return switch (role.toLowerCase()) {
             case "developer" -> List.of("08", "05", "02", "74%").get(index);
             case "evaluator" -> List.of("14", "27", "09", "91%").get(index);
-            case "admin" -> List.of("32", "148", "23", "96%").get(index);
-            default -> List.of("11", "46", "07", "88%").get(index);
+            case "admin" -> List.of("04", "1.2k", "23", "99%").get(index);
+            case "company" -> List.of("03", "46", "12", "88%").get(index);
+            default -> List.of("0", "0", "0", "0%").get(index);
         };
     }
 
@@ -274,7 +544,14 @@ public final class FxDashboardUI {
     private static void spotlightAction(Stage stage, String role) {
         switch (role.toLowerCase()) {
             case "developer" -> new ChallengeUI(stage).setVisible(true);
-            case "evaluator" -> new EvaluationUI(stage, "Rahul K.", "Graph Neural Network Optimizer").setVisible(true);
+            case "evaluator" -> {
+                List<models.Submission> subs = ChallengeRepository.getInstance().getAllSubmissions();
+                if (!subs.isEmpty()) {
+                    new EvaluationUI(stage, subs.get(0).getSubmissionId()).setVisible(true);
+                } else {
+                    FxComponents.showInfo("Evaluator", "No pending submissions to spotlight.");
+                }
+            }
             case "admin" -> FxComponents.showInfo("Audit", "No critical issues detected in latest compliance sweep.");
             default -> new CreateChallengeUI(stage).setVisible(true);
         }

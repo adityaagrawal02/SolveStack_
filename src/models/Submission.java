@@ -126,7 +126,7 @@ public class Submission {
      * @param score    Score between 0.0 and 100.0.
      * @param feedback Written feedback from the evaluator.
      */
-    public void calculateScore(double score, String feedback) {
+    public void evaluate(double score, String feedback) {
         if (score < 0 || score > 100) {
             System.out.println("[ERROR] Score must be between 0 and 100.");
             return;

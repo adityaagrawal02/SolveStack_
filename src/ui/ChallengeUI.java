@@ -41,15 +41,8 @@ public class ChallengeUI extends FxModalWindow {
 
         list.getChildren().addAll(title, subtitle);
 
-        List<ChallengeRow> rows = List.of(
-                new ChallengeRow("AI-Powered Supply Chain Optimizer", "Acme Corp", "INR 5,00,000", "30 May", "Open", "chip-success"),
-                new ChallengeRow("Carbon Footprint Tracker", "GreenTech", "INR 2,00,000", "15 Jun", "Under Review", "chip-warning"),
-                new ChallengeRow("Smart Inventory Management", "TechVision", "INR 3,50,000", "15 Jun", "Open", "chip-success"),
-                new ChallengeRow("AI Crop Disease Detection", "AgroTech", "INR 2,50,000", "10 Jul", "Open", "chip-success"),
-                new ChallengeRow("Renewable Energy Analytics", "SolarGrid", "INR 1,75,000", "22 Jul", "Open", "chip-info")
-        );
-
-        for (ChallengeRow row : rows) {
+        List<models.Challenge> challenges = ChallengeRepository.getInstance().getAllChallenges();
+        for (models.Challenge row : challenges) {
             list.getChildren().add(challengeCard(row));
         }
 
@@ -61,18 +54,24 @@ public class ChallengeUI extends FxModalWindow {
         return root;
     }
 
-    private VBox challengeCard(ChallengeRow row) {
-        Label name = new Label(row.name());
+    private VBox challengeCard(models.Challenge c) {
+        Label name = new Label(c.getTitle());
         name.getStyleClass().add("table-title");
 
-        Label meta = new Label(row.company() + "   Prize: " + row.prize() + "   Deadline: " + row.deadline());
+        Label meta = new Label(c.getPostedBy().getUsername() + "   Prize: INR " + c.getPrizeAmount() + "   Deadline: " + c.getDeadline());
         meta.getStyleClass().add("muted");
 
-        Label status = new Label(row.status());
-        status.getStyleClass().addAll("status-pill", row.statusClass());
+        Label status = new Label("Open");
+        status.getStyleClass().addAll("status-pill", "chip-success");
 
-        Button apply = FxComponents.primaryBtn("Apply", () -> new SubmitSolutionUI(getStage(), row.name()).setVisible(true));
+        Button apply = FxComponents.primaryBtn("Apply", () -> new SubmitSolutionUI(getStage(), c).setVisible(true));
         apply.getStyleClass().add("compact-btn");
+
+        models.User currentUser = UserSession.getInstance().getCurrentUser();
+        if (!(currentUser instanceof models.Developer)) {
+            apply.setVisible(false);
+            apply.setManaged(false);
+        }
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);

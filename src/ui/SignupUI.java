@@ -30,6 +30,8 @@ public class SignupUI {
     private Label dynamicFieldLabel2;
     private TextField dynamicValue1Field;
     private TextField dynamicValue2Field;
+    private VBox dynamicContainer1;
+    private VBox dynamicContainer2;
 
     public void show(Stage stage) {
         this.stage = stage;
@@ -145,22 +147,22 @@ public class SignupUI {
         });
 
         VBox userGroup = createInputWithLabel("Username", "john_dev");
-        TextField uField = (TextField) userGroup.getChildren().get(1);
+        TextField uField = extractTextField(userGroup);
         
         VBox emailGroup = createInputWithLabel("Email Address", "john@example.com");
-        TextField eField = (TextField) emailGroup.getChildren().get(1);
+        TextField eField = extractTextField(emailGroup);
 
         dynamicFieldLabel1 = new Label();
         dynamicFieldLabel1.getStyleClass().add("field-label");
         dynamicValue1Field = new TextField();
         dynamicValue1Field.getStyleClass().add("text-input");
-        VBox d1 = new VBox(0, dynamicFieldLabel1, wrapInput(dynamicValue1Field));
+        dynamicContainer1 = new VBox(0, dynamicFieldLabel1, wrapInput(dynamicValue1Field));
 
         dynamicFieldLabel2 = new Label();
         dynamicFieldLabel2.getStyleClass().add("field-label");
         dynamicValue2Field = new TextField();
         dynamicValue2Field.getStyleClass().add("text-input");
-        VBox d2 = new VBox(0, dynamicFieldLabel2, wrapInput(dynamicValue2Field));
+        dynamicContainer2 = new VBox(0, dynamicFieldLabel2, wrapInput(dynamicValue2Field));
 
         Label passLabel = new Label("Password");
         passLabel.getStyleClass().add("field-label");
@@ -168,6 +170,12 @@ public class SignupUI {
         pField.getStyleClass().add("password-input");
         pField.setPromptText("********");
         HBox pWrap = wrapInput(pField);
+
+        VBox secQGroup = createInputWithLabel("Security Question", "What is your pet's name?");
+        TextField secQField = extractTextField(secQGroup);
+
+        VBox secAGroup = createInputWithLabel("Security Answer", "Fluffy");
+        TextField secAField = extractTextField(secAGroup);
 
         refreshDynamicLabels();
 
@@ -179,7 +187,7 @@ public class SignupUI {
         Button signupBtn = new Button("Register Account");
         signupBtn.getStyleClass().add("primary-btn");
         signupBtn.setMaxWidth(Double.MAX_VALUE);
-        signupBtn.setOnAction(e -> registerUser(uField, eField, pField, errorMsg));
+        signupBtn.setOnAction(e -> registerUser(uField, eField, pField, secQField, secAField, errorMsg));
         VBox.setMargin(signupBtn, new Insets(24, 0, 0, 0));
 
         Button back = new Button("Back to login");
@@ -191,8 +199,8 @@ public class SignupUI {
         VBox content = new VBox(0, 
             welcome, title, sub,
             roleLabel, roleBox,
-            userGroup, emailGroup, d1, d2, 
-            passLabel, pWrap, errorMsg, 
+            userGroup, emailGroup, dynamicContainer1, dynamicContainer2, 
+            passLabel, pWrap, secQGroup, secAGroup, errorMsg, 
             signupBtn, back
         );
 
@@ -222,10 +230,18 @@ public class SignupUI {
         return box;
     }
 
+    private TextField extractTextField(VBox group) {
+        HBox box = (HBox) group.getChildren().get(1);
+        return (TextField) box.getChildren().get(0);
+    }
+
     private void refreshDynamicLabels() {
-        dynamicFieldLabel2.setVisible(false);
-        dynamicFieldLabel2.setManaged(false);
-        dynamicValue1Field.getParent().setVisible(true); // Ensure container is visible
+        if (dynamicContainer2 == null) return; // Prevent NPE during init
+
+        dynamicContainer2.setVisible(false);
+        dynamicContainer2.setManaged(false);
+        dynamicContainer1.setVisible(true);
+        dynamicContainer1.setManaged(true);
         
         switch (selectedRole) {
             case "Developer" -> {
@@ -234,11 +250,11 @@ public class SignupUI {
             }
             case "Company" -> {
                 dynamicFieldLabel1.setText("Company Name");
+                dynamicValue1Field.setPromptText("Acme Corp");
                 dynamicFieldLabel2.setText("Industry");
-                dynamicFieldLabel2.setVisible(true);
-                dynamicFieldLabel2.setManaged(true);
-                dynamicValue2Field.getParent().setVisible(true);
-                dynamicValue2Field.getParent().setManaged(true);
+                dynamicValue2Field.setPromptText("Technology");
+                dynamicContainer2.setVisible(true);
+                dynamicContainer2.setManaged(true);
             }
             case "Evaluator" -> {
                 dynamicFieldLabel1.setText("Expertise");
@@ -247,12 +263,14 @@ public class SignupUI {
         }
     }
 
-    private void registerUser(TextField u, TextField e, PasswordField p, Label err) {
+    private void registerUser(TextField u, TextField e, PasswordField p, TextField secQ, TextField secA, Label err) {
         String username = trim(u.getText());
         String email = trim(e.getText());
         String password = trim(p.getText());
+        String securityQuestion = trim(secQ.getText());
+        String securityAnswer = trim(secA.getText());
 
-        if (username.isBlank() || email.isBlank() || password.isBlank()) {
+        if (username.isBlank() || email.isBlank() || password.isBlank() || securityQuestion.isBlank() || securityAnswer.isBlank()) {
             err.setText("All fields required.");
             err.setVisible(true);
             err.setManaged(true);
@@ -261,9 +279,9 @@ public class SignupUI {
 
         boolean s;
         if ("Company".equals(selectedRole)) {
-            s = UserRepository.getInstance().registerCompany(username, email, password, trim(dynamicValue1Field.getText()), trim(dynamicValue2Field.getText()));
+            s = UserRepository.getInstance().registerCompany(username, email, password, trim(dynamicValue1Field.getText()), trim(dynamicValue2Field.getText()), securityQuestion, securityAnswer);
         } else {
-            s = UserRepository.getInstance().registerUser(username, email, password, selectedRole, trim(dynamicValue1Field.getText()));
+            s = UserRepository.getInstance().registerUser(username, email, password, selectedRole, trim(dynamicValue1Field.getText()), securityQuestion, securityAnswer);
         }
 
         if (!s) {

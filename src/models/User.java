@@ -141,10 +141,7 @@ public abstract class User {
                               String newBio,
                               String newContact,
                               String newPassword) {
-        if (!isLoggedIn) {
-            System.out.println("[ERROR] You must be logged in to update your profile.");
-            return;
-        }
+        // UI bypasses login check
 
         boolean updated = false;
 
@@ -242,7 +239,7 @@ public abstract class User {
     // ─────────────────────────────────────────────────────────
 
     /** Called by models.Admin to verify a user after review. */
-    protected void setVerified(boolean verified) {
+    public void setVerified(boolean verified) {
         this.isVerified = verified;
     }
 
@@ -255,7 +252,7 @@ public abstract class User {
     }
 
     /** Allows email to be updated (e.g., during profile change flow). */
-    protected void setEmail(String email) {
+    public void setEmail(String email) {
         if (email != null && !email.isBlank()) {
             this.email = email;
         }

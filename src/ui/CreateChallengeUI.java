@@ -63,7 +63,7 @@ public class CreateChallengeUI extends FxModalWindow {
                 FxComponents.formLabel("Category"), category,
                 doubleFieldRow("Prize Amount (INR)", prize, "Submission Deadline", deadline),
                 FxComponents.formLabel("Evaluation criteria"), criteria,
-                actionRow(challengeTitle)
+                actionRow(challengeTitle, description, prize)
         );
         form.getStyleClass().add("form-card");
 
@@ -88,15 +88,37 @@ public class CreateChallengeUI extends FxModalWindow {
         return row;
     }
 
-    private HBox actionRow(TextField challengeTitle) {
+    private HBox actionRow(TextField challengeTitle, TextArea description, TextField prize) {
         Button post = FxComponents.primaryBtn("Post Challenge", () -> {
-            String title = challengeTitle.getText() == null ? "" : challengeTitle.getText().trim();
-            if (title.isBlank()) {
+            String titleStr = challengeTitle.getText() == null ? "" : challengeTitle.getText().trim();
+            if (titleStr.isBlank()) {
                 FxComponents.showError("Missing title", "Please enter a challenge title before posting.");
                 return;
             }
-            FxComponents.showInfo("Challenge published", "Your challenge is now live in the discovery feed.");
-            dispose();
+
+            models.User u = UserSession.getInstance().getCurrentUser();
+            if (u instanceof models.Company company) {
+                double prizeAmt = 0;
+                try {
+                    prizeAmt = Double.parseDouble(prize.getText());
+                } catch (Exception ex) {
+                    FxComponents.showError("Invalid Prize", "Please enter prize amount in correct numeric format");
+                    return;
+                }
+
+                models.Challenge newChal = new models.Challenge(
+                        "CHAL-" + System.currentTimeMillis(),
+                        titleStr,
+                        description.getText(),
+                        company,
+                        prizeAmt,
+                        30);
+                ChallengeRepository.getInstance().addChallenge(newChal);
+                FxComponents.showInfo("Challenge published", "Your challenge is now live in the discovery feed.");
+                dispose();
+            } else {
+                FxComponents.showError("Permission Denied", "Only company accounts can post challenges.");
+            }
         });
 
         Button cancel = FxComponents.outlineBtn("Cancel", this::dispose);

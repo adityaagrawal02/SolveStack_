@@ -18,13 +18,11 @@ import javafx.stage.FileChooser;
 
 public class SubmitSolutionUI extends FxModalWindow {
 
-    private final String challengeName;
+    private final models.Challenge challenge;
 
-    public SubmitSolutionUI(Object parent, String challengeName) {
+    public SubmitSolutionUI(Object parent, models.Challenge challenge) {
         super("SolveStack - Submit Solution", 900, 760, parent);
-        this.challengeName = challengeName == null || challengeName.isBlank()
-                ? "Untitled Challenge"
-                : challengeName;
+        this.challenge = challenge;
     }
 
     @Override
@@ -39,7 +37,7 @@ public class SubmitSolutionUI extends FxModalWindow {
         Label title = new Label("Submit Your Solution");
         title.getStyleClass().add("page-title");
 
-        Label subtitle = new Label(challengeName + "   Build something bold and production-ready.");
+        Label subtitle = new Label((challenge != null ? challenge.getTitle() : "Untitled Challenge") + "   Build something bold and production-ready.");
         subtitle.getStyleClass().add("muted");
 
         TextField solutionTitle = FxComponents.textField("Give your solution a title");
@@ -72,8 +70,15 @@ public class SubmitSolutionUI extends FxModalWindow {
                 FxComponents.showError("Incomplete submission", "Please add a solution title and description.");
                 return;
             }
-            FxComponents.showInfo("Submitted", "Your solution has been submitted successfully.");
-            dispose();
+
+            models.User currentUser = UserSession.getInstance().getCurrentUser();
+            if (currentUser instanceof models.Developer dev) {
+                dev.submitSolution(challenge, descValue);
+                FxComponents.showInfo("Submitted", "Your solution for " + challenge.getTitle() + " has been submitted.");
+                dispose();
+            } else {
+                FxComponents.showError("Error", "Only developers can submit solutions.");
+            }
         });
 
         Button cancel = FxComponents.ghostBtn("Cancel", this::dispose);
