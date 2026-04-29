@@ -366,6 +366,11 @@ public final class FxDashboardUI {
         Region spacer = new Region();
         spacer.setMinHeight(10);
 
+        javafx.scene.control.TextArea bioField = FxComponents.textArea("Add a short bio about your expertise...");
+        if (currentUser != null && currentUser.getProfileBio() != null) {
+            bioField.setText(currentUser.getProfileBio());
+        }
+
         VBox form = FxComponents.card(
             FxComponents.sectionHeader("Profile Information"),
             FxComponents.formLabel("Username"),
@@ -373,9 +378,23 @@ public final class FxDashboardUI {
             FxComponents.formLabel("Email Address"),
             emailField,
             FxComponents.formLabel("Bio"),
-            FxComponents.textArea("Add a short bio about your expertise..."),
+            bioField,
             spacer,
-            FxComponents.primaryBtn("Save Changes", () -> FxComponents.showInfo("Settings", "Profile updated successfully."))
+            FxComponents.primaryBtn("Save Changes", () -> {
+                if (currentUser != null) {
+                    boolean success = UserRepository.getInstance().updateUserProfile(
+                        currentUser.getUsername(),
+                        usernameField.getText(),
+                        emailField.getText(),
+                        bioField.getText()
+                    );
+                    if (success) {
+                        FxComponents.showInfo("Settings", "Profile updated successfully.");
+                    } else {
+                        FxComponents.showError("Settings", "Failed to update profile. Username might be taken.");
+                    }
+                }
+            })
         );
         form.getStyleClass().add("form-card");
         form.setMaxWidth(600);
