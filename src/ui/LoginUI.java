@@ -8,7 +8,6 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -22,7 +21,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -244,11 +242,30 @@ public class LoginUI {
         field.getStyleClass().add("password-input");
         HBox.setHgrow(field, Priority.ALWAYS);
 
-        Label eye = new Label("\uD83D\uDC41"); // Eye icon
+        TextField visibleField = new TextField();
+        visibleField.setPromptText(prompt);
+        visibleField.getStyleClass().add("password-input");
+        HBox.setHgrow(visibleField, Priority.ALWAYS);
+        visibleField.setVisible(false);
+        visibleField.setManaged(false);
+
+        field.textProperty().addListener((obs, old, nv) -> visibleField.setText(nv));
+        visibleField.textProperty().addListener((obs, old, nv) -> field.setText(nv));
+
+        Label eye = new Label("\uD83D\uDC41");
         eye.getStyleClass().add("ghost-btn");
         eye.setPadding(new Insets(0, 12, 0, 0));
+        eye.setCursor(javafx.scene.Cursor.HAND);
+        eye.setOnMouseClicked(e -> {
+        boolean showing = visibleField.isVisible();
+        field.setVisible(showing);
+        field.setManaged(showing);
+        visibleField.setVisible(!showing);
+        visibleField.setManaged(!showing);
+        eye.setText(showing ? "\uD83D\uDC41" : "\uD83D\uDEAB");
+        });
 
-        box.getChildren().addAll(icon, field, eye);
+        box.getChildren().addAll(icon, field, visibleField, eye);
         return box;
     }
 

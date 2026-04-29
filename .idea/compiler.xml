@@ -9,8 +9,5 @@
         <module name="solvestack" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="solvestack" target="17" />
-    </bytecodeTargetLevel>
   </component>
 </project>
