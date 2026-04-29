@@ -44,14 +44,17 @@ public class UserRepository {
         Developer dev1 = new Developer("dev_001", "alex_kumar", "alex@example.com", "password123", "Java, Python, ML");
         users.put("alex_kumar", new UserCredential(dev1, "password123", "What is your pet's name?", "Fluffy"));
 
-        Developer dev2 = new Developer("dev_002", "priya_sharma", "priya@example.com", "secure456", "React, Node.js, AWS");
+        Developer dev2 = new Developer("dev_002", "priya_sharma", "priya@example.com", "secure456",
+                "React, Node.js, AWS");
         users.put("priya_sharma", new UserCredential(dev2, "secure456", "What is your pet's name?", "Fluffy"));
 
         // Sample Company
-        Company comp1 = new Company("comp_001", "acme_corp", "contact@acme.com", "company123", "Acme Corp Solutions", "Technology", "ACM-2023-001");
+        Company comp1 = new Company("comp_001", "acme_corp", "contact@acme.com", "company123", "Acme Corp Solutions",
+                "Technology", "ACM-2023-001");
         users.put("acme_corp", new UserCredential(comp1, "company123", "What is your pet's name?", "Fluffy"));
 
-        Company comp2 = new Company("comp_002", "greentech", "info@greentech.com", "green789", "GreenTech Industries", "Sustainability", "GRT-2023-002");
+        Company comp2 = new Company("comp_002", "greentech", "info@greentech.com", "green789", "GreenTech Industries",
+                "Sustainability", "GRT-2023-002");
         users.put("greentech", new UserCredential(comp2, "green789", "What is your pet's name?", "Fluffy"));
 
         // Sample Evaluator
@@ -95,9 +98,11 @@ public class UserRepository {
 
     /**
      * Registers a new user account
+     * 
      * @return true if registration successful, false if username already exists
      */
-    public boolean registerUser(String username, String email, String password, String role, String dynamicValue, String securityQuestion, String securityAnswer) {
+    public boolean registerUser(String username, String email, String password, String role, String dynamicValue,
+            String securityQuestion, String securityAnswer) {
         // Check if username already exists
         if (users.containsKey(username)) {
             return false;
@@ -133,9 +138,11 @@ public class UserRepository {
 
     /**
      * Registers a new company account with company-specific fields
+     * 
      * @return true if registration successful, false if username already exists
      */
-    public boolean registerCompany(String username, String email, String password, String companyName, String industry, String securityQuestion, String securityAnswer) {
+    public boolean registerCompany(String username, String email, String password, String companyName, String industry,
+            String securityQuestion, String securityAnswer) {
         // Check if username already exists
         if (users.containsKey(username)) {
             return false;
@@ -152,11 +159,31 @@ public class UserRepository {
             return false;
         }
     }
+
     public boolean updatePassword(String username, String newPassword) {
         UserCredential credential = users.get(username);
         if (credential != null && newPassword != null && !newPassword.isBlank()) {
             credential.password = newPassword;
             credential.user.updateProfile(null, null, null, newPassword);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean updateUserProfile(String oldUsername, String newUsername, String newEmail, String newBio) {
+        UserCredential credential = users.get(oldUsername);
+        if (credential != null) {
+            if (newUsername != null && !newUsername.isBlank() && !newUsername.equals(oldUsername)) {
+                if (users.containsKey(newUsername)) {
+                    return false; // username already taken
+                }
+                users.remove(oldUsername);
+                users.put(newUsername, credential);
+            }
+
+            String updatedUsername = (newUsername != null && !newUsername.isBlank()) ? newUsername : oldUsername;
+            credential.user.updateProfile(updatedUsername, newBio, null, null);
+            credential.user.setEmail(newEmail);
             return true;
         }
         return false;

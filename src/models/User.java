@@ -252,7 +252,7 @@ public abstract class User {
     }
 
     /** Allows email to be updated (e.g., during profile change flow). */
-    protected void setEmail(String email) {
+    public void setEmail(String email) {
         if (email != null && !email.isBlank()) {
             this.email = email;
         }
