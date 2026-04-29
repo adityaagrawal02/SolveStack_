@@ -67,6 +67,12 @@ public class ChallengeUI extends FxModalWindow {
         Button apply = FxComponents.primaryBtn("Apply", () -> new SubmitSolutionUI(getStage(), c).setVisible(true));
         apply.getStyleClass().add("compact-btn");
 
+        models.User currentUser = UserSession.getInstance().getCurrentUser();
+        if (!(currentUser instanceof models.Developer)) {
+            apply.setVisible(false);
+            apply.setManaged(false);
+        }
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 

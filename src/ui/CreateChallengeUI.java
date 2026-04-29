@@ -102,6 +102,8 @@ public class CreateChallengeUI extends FxModalWindow {
                 try {
                     prizeAmt = Double.parseDouble(prize.getText());
                 } catch (Exception ex) {
+                    FxComponents.showError("Invalid Prize", "Please enter prize amount in correct numeric format");
+                    return;
                 }
 
                 models.Challenge newChal = new models.Challenge(
